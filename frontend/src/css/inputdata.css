@@ -1,0 +1,20 @@
+.input-data-body {
+    display: flex;
+    flex-direction: column;
+}
+.input-data-show {
+    display: flex;
+    height: 30px;
+}
+.input-data-show-box{
+    flex: 2;
+}
+.input-data-hanlde {
+    display: flex;
+}
+
+.hidden-btn {
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+}

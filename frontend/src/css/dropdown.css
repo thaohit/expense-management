@@ -1,0 +1,83 @@
+
+.dropdown {
+    width: 100%;
+}
+
+.dropdown-up {
+    width: 100%;
+    display: flex;
+    border-bottom: 0.5px solid #8c8c8c;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.dropdown-btn {
+    width: 100%;
+    cursor: pointer;
+}
+
+.dropdown-up:hover {
+    background-color: #efeeee;
+}
+
+.icon {
+    transition: transform 0.3s ease;
+}
+
+.rotate {
+    transform: rotate(180deg);
+}
+
+.dropdown-down {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border: 1px solid #ccc;
+}
+
+.menu-open {
+    max-height: 300px;
+}
+
+.btn-month {
+    border-bottom: 0.5px solid #e3e3e3;
+}
+
+.btn-month:hover {
+    background-color: #e6e6e6;
+}
+    
+    /* .dropdown {
+      width: 200px;
+    }
+
+
+
+.dropdown-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+}
+
+.icon {
+  transition: transform 0.3s ease;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.menu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  border: 1px solid #ccc;
+}
+
+.menu.open {
+  max-height: 200px;
+} */
