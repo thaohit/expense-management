@@ -7,7 +7,7 @@ import { handleSaveData } from "../models/registerModel";
  * @param res 
  * @returns 
  */
-export function register (req: Request, res: Response): object
+export function register (req: Request, res: Response): void
 {
     let result: object = {};
     const requestData = req.body;
@@ -20,5 +20,5 @@ export function register (req: Request, res: Response): object
         console.log(result);
     }
     
-    return res.json(result);
+    res.json(result);
 }

@@ -1,4 +1,4 @@
-import { Request, Response} from 'express';
+import { Request, Response } from 'express';
 
 import * as loginModel from '../models/loginModel';
 
@@ -8,7 +8,7 @@ import * as loginModel from '../models/loginModel';
  * @param res response　フロンエンドへのレスポンス
  * @returns Object
  */
-export function login(req:Request, res:Response):object {
+export function login(req:Request, res:Response):void {
 
     const requestData = req.body;
     let result:boolean = false;
@@ -24,26 +24,5 @@ export function login(req:Request, res:Response):object {
     }
     
     // 結果をJSON形式として返す
-    return res.json({success: result});
+    res.json({success: result});
 }
-
-// ユーザーとパスワードをチェック
-// app.post("/check-login", (res:Response, req:Request) => {
-//     const requestData = req.body;
-//     let result:boolean = false;
-//     console.log(req.body);
-//     // Mình sẽ viết logic kiểm tra thông tin sau
-//     if (Object.keys(requestData).length !== 0) {
-//         if(loginModel.handleCheckLogin(requestData)) {
-//             result = true;
-//         }
-//     }
-//     // 結果をJSON形式として返す
-//     res.json({success: result});
-// })
-
-// login(Request, Response)
-
-
-
-

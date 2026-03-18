@@ -1,17 +1,81 @@
 .input-data-body {
     display: flex;
-    flex-direction: column;
+    max-height: 120px;
+    transition: max-height 0.8s ease;
 }
+
+.body-close {
+    max-height: 0;
+    overflow: hidden;
+}
+
 .input-data-show {
+    flex: 3;
+}
+
+.input-data-handle {
+    flex: 5;
+    display: grid;
+    grid-template-columns: 2fr 6fr 2fr;
+    align-items: center;
+    
+}
+
+/* .catagory-list {
+    flex: 2;
     display: flex;
-    height: 30px;
+    justify-content: end;
+    overflow: scroll;
+    scroll-behavior: auto;
+    max-height: 100%;
+} */
+
+.catagory-list {
+    position: absolute;
+    /* top: 33%; */
+
+    background-color: rgb(255, 255, 255);
+    opacity: 1;
+    white-space: nowrap;
+    border: 1px solid;
+    max-width: 200px;
+    max-height: 100%;
+    overflow: auto;
+    transition: right 0.3s ease;
+    /* transition: max-height 1s ease; */
+    /* transition: ; */
+}
+.input-data-handle-box {
+    width: 90%;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    /* border: 2px solid rgb(140 140 140); */
+}
+tr {
+    transition: 0.2s ease;   
+     
+}
+
+tr:hover {
+    background-color: rgb(234, 234, 234);
+}
+
+th, td {
+    text-align: left;
+    padding: 8px;
+}
+
+th {
+    background-color: #121212;
+    color: #fff;
+    border-left: 1px solid #fff;
 }
 .input-data-show-box{
     flex: 2;
-}
-.input-data-hanlde {
-    display: flex;
-}
+}    
 
 .hidden-btn {
     display: flex;

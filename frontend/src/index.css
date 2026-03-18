@@ -1,7 +1,18 @@
 body {
     margin: 0 auto;
     padding: 0;
-    margin: 0;
+    /* margin: 0;
+    background-image: url("image/background_img.jpg"); */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-clip: border-box;
+    backdrop-filter: blur(2px);
+}
+
+#root {
+    max-width: 1000px;
+    margin: 0px auto;
 }
 
 #home-page {
@@ -27,29 +38,37 @@ button {
 
 
 /* ----------------sidebar------------------- */
-#sidebar {
-    flex: 3;
-    overflow: scroll;
-    scroll-behavior: auto;
+.sidebar {
+    /* flex: 3; */
     margin: 10px 5px 0px 5px;
+    max-width: 22%;
+    transition: max-width 0.3s ease;
+}
+
+.sidebar-close {
+    max-width: 0;
+    overflow: hidden;
 }
 
 .year-btn {
     margin: 1px;
 }
 
-/* ------------Component------------- */
-.icon {
+.close-sidebar {
+    cursor: pointer;
     display: flex;
-    justify-content: space-between;
-    margin: 1px 2px 1px 2px;
+    align-items: center;
+    border: 1px solid;
 }
-.btn-icon{
+
+/* ------------Component------------- */
+/* 共通----ボタン*/
+.btn-icon {
     width: 100%;
     display: flex;
     justify-content: end;
     align-items: center;
-    background-color: #f3f3f3;
+
 }
 .btn-icon span {
     transition: 0.3s ease;
@@ -61,17 +80,55 @@ button {
     background-color: #000000;
     color: #ffffff;
 }
+/* 共通----ボタン逆転 */
+.icon {
+    display: flex;
+    justify-content: center;
+    margin: 1px 2px 1px 2px;
+    transition: transform 0.3s ease;
+}
+
+.rotate {
+    transform: rotate(180deg);
+}
+
+/* month input */
+.months-btn-area {
+    max-height: 200px;
+    overflow: auto;
+    padding-right: 10px;
+}
+.month-btn-body {
+    display: flex;
+}
+
+.btn-month {
+    border-top: 0.5px solid #e3e3e3;
+}
+
+.btn-month:hover {
+    background-color: #e6e6e6;
+}
 
 /* ------------------------------------ */
 #sidebar-main {
     margin: 1px;
+    width: 200px;
+    height: 85%;
+
+}
+
+#year-btn-area {
+    overflow: scroll;
+    scroll-behavior: auto;
+    height: 100%;
 }
 
 #main {
     flex: 7;
 }
 
-.border-1p{
+.border-1p {
     border: #000000 1px solid;
     margin: 1px;
     padding: 1px;
@@ -79,4 +136,6 @@ button {
 
 .font-bold {
     font-weight: bold;
+    font-size: 17px;
 }
+

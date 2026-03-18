@@ -4,6 +4,7 @@ import cors from 'cors';
 
 import { loginRouter } from './routes/loginRouter';
 import { registerRouter } from './routes/registerRouter';
+import { homeRouter } from './routes/homeRouter';
 
 const app = express();
 
@@ -22,6 +23,8 @@ app.use("/check-login", loginRouter);
 
 // 新規登録
 app.use("/register", registerRouter);
+
+app.use("/home", homeRouter);
 
 app.listen(3000, () => {
     console.log("Server running!!");

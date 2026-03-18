@@ -19,7 +19,8 @@ export function hasJapanese(target: any):boolean
 };
 
 /**
- * 
+ * 英語数字・文字チェック
+ * * [0~9, a~Z]
  * @param target 
  * @returns 
  */
@@ -27,4 +28,18 @@ export function checkString(target: any): boolean
 {
     const regex = /^[0-9a-zA-Z]+$/;
     return regex.test(target);
+}
+
+/**
+ * 英語数字チェック
+ * * [0~9]
+ * @param target 
+ * @returns 
+ */
+export function checkNumber(target: any): boolean
+{
+
+  const numberFormat = /^[0-9]+$/;
+  return numberFormat.test(target);
+
 }

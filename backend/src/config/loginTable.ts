@@ -1,6 +1,6 @@
 // import * as sqlite3 from 'sqlite3';
-import Database from 'better-sqlite3';
-import * as path from 'path';
+import Database from "better-sqlite3";
+import * as path from "path";
 
 
 const dbPath = path.resolve(__dirname, '../db', 'login.db')
@@ -23,7 +23,7 @@ export function getAllData():object {
 
     try {
         const result = db.prepare(`SELECT * FROM login_information`).all();
-        if (!result) {
+        if (result.length < 0) {
             return {
                 success: false,
                 data: {},
