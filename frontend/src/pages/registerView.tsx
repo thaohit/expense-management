@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { hanldePostDataRegister } from "../services/api";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { hanldePostDataRegister } from '../services/api';
 
 function Register() {
     const [ user, setUser ] = useState<string>("");

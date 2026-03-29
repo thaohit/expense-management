@@ -11,23 +11,23 @@ type yearTableType = {
     year_name: number;
 }
 
-type typeFunctionHanldeWithDB<T> = {
+type functionHanldeWithDBType<T> = {
     success: boolean;
     data?: T;
     mess: string;
 }
 
-type typeGetAllYear = {
+type getAllYearType = {
     success: boolean;
     data: yearTableType[];
     mess: string;
 }
 
-type typeGetYear = {
+type getYearType = {
     year_id: number;
 }
 
-type typeInsetYear = {
+type insetYearType = {
     row_id: number | bigint;
 }
 
@@ -46,10 +46,10 @@ db.exec(`
  * @param year number
  * @returns 
  */
-export function selectData(year: number): typeFunctionHanldeWithDB<typeGetYear>
+export function selectData(year: number): functionHanldeWithDBType<getYearType>
 {
     try {
-        const result = db.prepare(`SELECT year_id FROM year WHERE year_name = ?`).get(year) as typeGetYear;
+        const result = db.prepare(`SELECT year_id FROM year WHERE year_name = ?`).get(year) as getYearType;
         if (!result) {
             return {
                 success: false,
@@ -80,7 +80,7 @@ export function selectData(year: number): typeFunctionHanldeWithDB<typeGetYear>
  * yearDBからデータを全て取得
  * @returns 
  */
-export function getAll(): typeFunctionHanldeWithDB<yearTableType[]>
+export function getAll(): functionHanldeWithDBType<yearTableType[]>
 {
     try {
         const result = db.prepare(`SELECT * FROM year ORDER BY year_name ASC`).all() as yearTableType[];
@@ -115,7 +115,7 @@ export function getAll(): typeFunctionHanldeWithDB<yearTableType[]>
  * @param year number
  * @returns 
  */
-export function saveData(year: number): typeFunctionHanldeWithDB<typeInsetYear>
+export function saveData(year: number): functionHanldeWithDBType<insetYearType>
 {
     try {
         const result = db.prepare(`INSERT INTO year(year_name) VALUES(?)`).run(year);
@@ -148,7 +148,7 @@ export function saveData(year: number): typeFunctionHanldeWithDB<typeInsetYear>
  * mess
  * }
  */
-export function deleteData(year_ids: number[]): typeFunctionHanldeWithDB<typeInsetYear>
+export function deleteData(year_ids: number[]): functionHanldeWithDBType<insetYearType>
 {
     try {
         console.log("db delete year" , year_ids);

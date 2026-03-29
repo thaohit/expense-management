@@ -18,13 +18,13 @@ type BtnIconProps = {
     handleData?: number[];              // 処理したいデータ
     handleAdd?: () => void;             // 追加ボタンの処理
     handleDel?: (data: number[]) => void;             // 削除ボタンの処理
-    handleSave: (data: number) => void;  // 保存ボタンの処理
+    handleSave?: (data: number) => void;  // 保存ボタンの処理
     children?: React.ReactNode;
 }
 
 
 /**
- * @param props: boolean;                    // propsを渡すか？
+ * @param props: boolean;                    // propsを渡すか？ true 任意で設計　false default
  * @param title: number;                     // icon-barのタイトル
  * @param style: SvgIconProps["fontSize"];   // iconのサイズ
  * @param handleAdd: () => void;             // 追加ボタンの処理
@@ -34,7 +34,7 @@ type BtnIconProps = {
  */
 function BtnIcon(
     { 
-        props = true,
+        props = false,
         title = "",
         style = "small",
         handleData = [],
@@ -53,27 +53,34 @@ function BtnIcon(
     return <>
         <div className="icon">
             <div className="icon-area-title"><span>{title}</span></div>
-            <div className="icon-area-input btn-icon">
-                {isAdd ?
-                <>
-                    <input 
-                        type="text"
-                        name="bar-title"
-                        className="bar-title"
-                        placeholder="2000"
-                        style={{width:"100%", height:"80%"}}
-                        onChange={(e:React.ChangeEvent<HTMLInputElement>) => (setInputData(e.target.value))}
-                    />
-                </>
-                :
-                <></>
+            {!props ?
+                <div className="icon-area-input btn-icon">
+                    {isAdd ?
+                    <>
+                        <input 
+                            type="text"
+                            name="bar-title"
+                            className="bar-title"
+                            placeholder="2000"
+                            style={{width:"100%", height:"80%"}}
+                            onChange={(e:React.ChangeEvent<HTMLInputElement>) => (setInputData(e.target.value))}
+                            />
+                    </>
+                    : null
+                    }
+                </div>
+                : null
             }
-            </div>
             <div className="add-delete-btn btn-icon">
-                {props ? (
+                {!props ? (
                     <>
                         {isAdd ?
-                            <span onClick={() => handleSave(parseInt(inputData))}><CheckIcon /></span>
+                            <span onClick={() => {
+                                if (handleSave) {
+                                    handleSave(parseInt(inputData))}
+                                }
+                            }
+                            ><CheckIcon /></span>
                         :
                          null
                         }

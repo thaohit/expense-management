@@ -16,7 +16,7 @@ type DropDownProps = {
     homeReCount: number;            // ホームページのrender回数
     year: number;                   // 年
     id?: number;                    // year_id
-    handleClickMonth: (value?: number) => void;                         // 月をクリックする処理
+    handleSelectTimeForMainAera: (time_id: number, year: number, month: number) => void;                         // 月をクリックする処理
     handleCheckBox: (e: React.ChangeEvent<HTMLInputElement>) => void;   // 月を選択する処理
     children?: React.ReactNode;
 }
@@ -38,7 +38,7 @@ type selectMonthOfEachYearType = {
  * @param children monthList 
  * @returns 
  */
-function Dropdown({homeReCount, year, id, handleCheckBox, handleClickMonth}:DropDownProps)
+function Dropdown({homeReCount, year, id, handleCheckBox, handleSelectTimeForMainAera}:DropDownProps)
 {
     const [timeData, setTimeData] = useState<timeDbType[]>([]);
     // Click Year and drop down month list
@@ -163,6 +163,11 @@ function Dropdown({homeReCount, year, id, handleCheckBox, handleClickMonth}:Drop
         setMonthCheckBox(monthOfEachYear);
     }
 
+    const handleGetClickMonth = (time_id: number, month: number) => {
+        handleSelectTimeForMainAera(time_id ,year, month);
+    }
+
+
     useEffect(() => {
 
         let ignore = false; // Clear up
@@ -208,7 +213,7 @@ function Dropdown({homeReCount, year, id, handleCheckBox, handleClickMonth}:Drop
                 <MonthList 
                     times={timeData}
                     handleCheckBoxMonth={handleCheckBoxMonth}
-                    handleClickMonth={handleClickMonth}
+                    handleClickMonth={handleGetClickMonth}
                 />
             </div>
         </div>

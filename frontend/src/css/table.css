@@ -1,0 +1,19 @@
+.create-table {
+    padding: 5px;
+}
+
+.create-table h4{
+    margin-bottom: 10px;
+}
+
+.create-table button {
+    cursor: pointer;
+    border: 1px solid;
+    border-radius: 2px;
+    transition: 0.3s ease-in-out;
+}
+
+.create-table button:hover {
+    color: white;
+    background-color: rgb(73, 73, 73);
+}

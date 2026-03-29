@@ -9,6 +9,7 @@ import AddAlertIcon from '@mui/icons-material/AddAlert';
 import FormatListBulletedAddIcon from '@mui/icons-material/FormatListBulletedAdd';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import CheckIcon from '@mui/icons-material/Check';
+import AddchartIcon from '@mui/icons-material/Addchart';
 
 // Components
 import Dropdown from '../components/Dropdown';
@@ -16,10 +17,13 @@ import MonthList from '../components/MonthList'
 import BtnIcon from '../components/BtnIcon';
 import InputData from '../components/InputData';
 import Table from '../components/Table';
+import HomeMain from '../components/MainHome';
+import CategoryAddArea from '../components/CategoryAddArea';
+
 
 
 // api
-import { hanldeGetAllYear, handleSaveYear, handleDeleteYear } from '../services/api';
+import { handleGetAllYear, handleSaveYear, handleDeleteYear } from '../services/api';
 
 type TableBody = {
     day: string;
@@ -31,6 +35,12 @@ type TableBody = {
 type yearDbType = {
     year_id: number;
     year_name: number;
+}
+
+type timeType = {
+    time_id: number;
+    year: number;
+    month: number;
 }
 
 const months:string[] = [];
@@ -59,7 +69,16 @@ function Home() {
     const [updateDataState, setUpdateDataState] = useState<boolean>(true);      // DBとの処理が実行された場合、re-render
     const [yearCheckBox, setYearCheckBox] = useState<number[]>([]);             // 選択した年のidのリスト
 
-    // const
+    const [isCategoryAdd, setIsCategoryAdd] = useState<boolean>(false);         // category追加画面を表示するか true or false
+    
+    const [yearForComponent, setYearForComponent] = useState<number>(0);        // componentの年を設定
+    const [monthForComponent, setMonthForComponent] = useState<number>(0);      // componentの月を設定
+    const [timeForComponent, setTimeForComponent] = useState<timeType>({
+        time_id: 0,
+        year: 0,
+        month: 0
+    })                                                                          // componentのtimeを設定
+    const [isClickMonth, setIsClickMonth] = useState<boolean>(false);           // タイムの選択状態
 
     // =========== hanle eara
     const changePage = ():void => {
@@ -69,14 +88,6 @@ function Home() {
         const place = data.map(() => "?");
         console.log(place);
     }
-    
-    const handleYearArea = (): void => {
-
-    }
-
-    // const handleAddYearBar = (): void => {
-    //     setIsAddYear(!isAddYear);
-    // }
 
     /**
      * 
@@ -155,8 +166,21 @@ function Home() {
         setYearCheckBox(delYearId);
     }
 
-    const testbtnmont = (year = 0) => {
-        alert(year);
+    /**
+     * drowdownから選択されたタイムを取得
+     * @param time_id 
+     * @param year 
+     * @param month 
+     */
+    const handleSelectTimeForMainAera = (time_id: number, year: number = 0, month: number = 0) => {
+        setYearForComponent(year);
+        setMonthForComponent(month);
+        setTimeForComponent({
+            time_id: time_id,
+            year: year,
+            month: month
+        });
+        setIsClickMonth(!isClickMonth);
     };
 
     // Lỗi khi dùng useEffect
@@ -168,7 +192,7 @@ function Home() {
 
         let ignore = false; // Clear up
 
-        const getYears = hanldeGetAllYear();
+        const getYears = handleGetAllYear();
         getYears.then((res) => {
 
             let data: yearDbType[] = []; // 初期化
@@ -200,11 +224,12 @@ function Home() {
                             <AccountBoxSharpIcon />
                         </div>
                         <div className="dowm">
-                            <BtnIcon props={false} handleSave={handleDelYearBar}>
+                            <BtnIcon props={true} handleSave={handleDelYearBar}>
                                 <span onClick={changePage} title="Logout"><LogoutSharpIcon /></span>
                                 <span><EqualizerIcon /></span>
                                 <span><AddAlertIcon /></span>
                                 <span><FormatListBulletedAddIcon /></span>
+                                <span title="AddCategory" onClick={() => setIsCategoryAdd(!isCategoryAdd)}><AddchartIcon/></span>
                             </BtnIcon>
                         </div>
                     </div>
@@ -228,7 +253,7 @@ function Home() {
                                         year={value.year_name}
                                         id={value.year_id}
                                         handleCheckBox={handleCheckBox}
-                                        handleClickMonth={testbtnmont}
+                                        handleSelectTimeForMainAera={handleSelectTimeForMainAera}
                                     />
                                 </div>
                             ))}
@@ -239,23 +264,21 @@ function Home() {
                     <span className={ isOpen ? "icon" : "icon rotate"}><KeyboardDoubleArrowLeftIcon /></span>
                 </div>
                 <div id="main">
-                    <div className="main-header">
-                        <div className="main-header-title border-1p">
-                            <h1>Home Page</h1>
-                        </div>
-                        <BtnIcon
-                            handleSave={handleDelYearBar}
+                    {!isCategoryAdd ? 
+                        <HomeMain
+                            isCategoryUpdata={isCategoryAdd}
+                            year={yearForComponent}
+                            month={monthForComponent}
+                            time={timeForComponent}
+                            isClickMonth={isClickMonth}
+                        /> :
+                        <CategoryAddArea
+                            year={yearForComponent}
+                            month={monthForComponent}
+                            time={timeForComponent}
+                            isClickMonth={isClickMonth}
                         />
-                    </div>
-                    <div className="main-input-data border-1p">
-                        <InputData sideBarIsOpen={isOpen}/>
-                    </div>
-                    <div className="main-body border-1p">
-                        <Table 
-                            title={titles}
-                            body={tableData}
-                        />
-                    </div>
+                    }
                 </div>
             </div>
         </>

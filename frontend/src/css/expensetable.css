@@ -1,0 +1,55 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+
+.expense-table ul {
+    display: grid;
+    /* justify-content: center; */
+    grid-template-columns: 0.5fr 1.5fr 2fr 2fr 3fr;
+    transition: 0.3s ease-in-out;
+}
+.expense-table ul li{
+    list-style-type: none;
+    height: 30px;
+    width: 100%;
+    border: 1px solid;
+    transition: 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+    /* padding: 2px; */
+    /* margin: 2px; */
+}
+
+.expense-table ul:hover {
+    background-color: rgb(234, 234, 234);
+
+}
+.expense-table ul li p {
+    display: flex;
+    align-items: center;
+}
+.expense-table .table-title li p {
+    margin: 3px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+}
+.expense-table button {
+    padding: 0px;
+    height: 100%;
+    width: 50%;
+}
+
+.table-header ul li{
+    background-color: black;
+    border: 1px solid #fff;
+}
+
+.table-body li .input-text {
+    border: none;
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+}

@@ -1,0 +1,37 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+.category-add-area {
+    height: 100%;
+}
+
+.category-add-body {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 5fr 5fr;
+    margin: 10px;
+}
+.add-category input{
+    height: 20px;
+    padding: 5px;
+}
+
+.add-category button{
+    cursor: pointer;
+    border: 1px solid;
+    border-radius: 2px;
+    transition: 0.3s ease-in-out;
+}
+
+.add-category button:hover{
+    background-color: #000;
+    color: #fff;
+}
+
+
+.category-table {
+    max-height: 100%;
+    overflow: scroll;
+
+}

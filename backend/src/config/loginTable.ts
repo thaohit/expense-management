@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import * as path from "path";
 
 
-const dbPath = path.resolve(__dirname, '../db', 'login.db')
+const dbPath = path.resolve(__dirname, '../db', 'maindb.db')
 const db = new Database(dbPath);
 
 db.exec(`

@@ -1,18 +1,24 @@
 
 import '../css/inputdata.css';
+import { useEffect, useState } from 'react';
 
 import ArrowCircleRightIcon from '@mui/icons-material/ArrowCircleRight';
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
 
-import { useEffect, useState } from 'react';
 import BtnIcon from './BtnIcon';
 import Table from '../components/Table';
 import CategoryTable from './CategoryTable';
 
-type CategoryProps = {
-    no: string;
-    category: string;
+// api
+import { handleGetAllCategory, handleSaveExpense } from '../services/api';
+
+
+
+// ==========type==========
+type categoryDataType = {
+    category_id: number;
+    category_name: string;
 };
 
 type InputDataType = {
@@ -20,25 +26,51 @@ type InputDataType = {
     data: string[];
 }
 
-const CategoryTitlte: string[] = ["No", "Category"];
-const CategoryBody: CategoryProps[] = [
-    {no: "1", category: "Eat"},
-    {no: "2", category: "House"},
-    {no: "3", category: "Water"},
-    {no: "4", category: "Another"}
-];
+type timeType = {
+    time_id: number;
+    year: number;
+    month: number;
+}
 
-// const inputeTitle: string[] = ["Ngày", "Mục", "Số tiền", "Ghi chú"];
-const emptyArray: string[] = ["", "", "", ""];
+// 
+type inputDataProps = {
+    sideBarIsOpen: boolean;             // sideBar開閉状態
+    isCategoryUpdate?: boolean;         // category table更新状態
+    isClickMonth: boolean;              // time選択状態
+    year: number;                       // 年
+    month: number;                      // 月
+    time: timeType;
+    getIsUpdateData: () => void;        // expenseデータ更新状態を取得
+}
 
-
-function InputData({ sideBarIsOpen = true }) 
+/**
+ * 
+ * @param sideBarIsOpen sideBar開閉状態
+ * @param isCategoryUpdate category table更新状態
+ * @param isClickMonth time選択状態
+ * @param year 年
+ * @param month 月
+ * @param time id year month
+ * @param getIsUpdateData expenseデータ更新状態を取得
+ * @returns 
+ */
+function InputData({
+    sideBarIsOpen = true,
+    isCategoryUpdate,
+    isClickMonth,
+    year,
+    month,
+    time,
+    getIsUpdateData
+}: inputDataProps) 
 {
-    const [day, setDay] = useState<string>("1");
-    const [category, setCategory] = useState<string>("Eat");
-    const [money, setMoney] = useState<string>("10000");
-    const [note, setNote] = useState<string>("Khong gi");
+    // 表示用
+    const [day, setDay] = useState<string>("");
+    const [category, setCategory] = useState<string>("");
+    const [money, setMoney] = useState<string>("");
+    const [note, setNote] = useState<string>("");
 
+    // inputのplaceholdel設定
     const [placehol, setPlacehol] = useState<string[]>(
         [
             "",
@@ -50,74 +82,169 @@ function InputData({ sideBarIsOpen = true })
     );
     const [inputTitle, setInputTitle] = useState<string[]>(["Ngày", "Mục", "Số tiền", "Ghi chú", ""]);
     const [inputDataArray, setInputDataArray] = useState<string[]>(["", "", "", ""]);
-    const [isOpen, setIsOpen] = useState<boolean>(true);
-    const [categoryIsUp, setCategoryIsUp] = useState<boolean>(false);
-    const [countInput, setCountInput] = useState<number>(0);
-    const [inputData, setInputData] = useState<string>("");
-    const [test, settest] = useState<boolean>(true);
 
+    const [isOpen, setIsOpen] = useState<boolean>(true);                                    // inputData開閉状態
+    
+    const [countInput, setCountInput] = useState<number>(0);                                // 入力番目
+    const [inputData, setInputData] = useState<string>("");                                 // データ入力
 
-    const hanldeInputData = () => {
+    const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);               // category_tableのデータを設定
+
+    /**
+     * expenseデータ保存処理
+     */
+    const handleSaveInputData = () => {
+        console.log([...inputDataArray, time.time_id.toString()]);
+
+        const saveExpense = handleSaveExpense([...inputDataArray, time.time_id.toString()]);
+        saveExpense.then((res) => {
+            console.log(res);
+            if (res.success && res.data && res.data.id !== 0) {
+                // expense table更新された場合、状態更新
+                getIsUpdateData();
+                handleInitial();
+
+            }
+        })
+    }
+
+    const handleInputData = () => {
         
     }
 
+
+    // 初期化処理
+    const handleInitial = () => {
+
+        setCountInput(0);
+        setInputDataArray(["", "", "", ""]);
+        setInputData("");
+
+        // 表示用初期化
+        setDay("");
+        setCategory("");
+        setMoney("");
+        setNote("")
+    }
     const handleReturnData = () => {
 
         if (countInput > 0) {
+
+            // 表示用
+            switch (countInput) {
+                case 0:
+                    setDay("");
+                    break;
+                case 1:
+                    setCategory("");
+                    break;
+                case 2:
+                    setMoney("");
+                    break;
+                case 3:
+                    setNote("")
+                    break;
+            }
 
             let arrayData: string[] = inputDataArray;
             let count = countInput;
             arrayData[count] = "";
             
-            console.log(arrayData[count]);
             setInputData(arrayData[count - 1]);
             setInputDataArray(arrayData);
-
             setCountInput(countInput-1);
         } 
     }
+
+    /**
+     * 
+     * @param event 
+     */
     const handleEnterKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
 
         // enter keyを押下する時、入力データを取得
         if (event.key === 'Enter') {
+            // 入力するタイムを選択しない場合、入力させない
+            if (year === 0 && month === 0) {
+                alert("Select your time you want to input!!")
+                setInputData("");
+                return;
+            }
             if (inputData === "" && countInput < 3) {
                 alert("Input your data!");
+                return;
             }
-            // if (countInput === 0) {
-            //     setDay(inputData);
-            // } else if (countInput === 1) {
-            //     setCategory(inputData);
-            // } else if (countInput === 2) {
-            //     setMoney(inputData);
-            // } else {
-            //     setNote(inputData)
-            // }
-            else {
+
+            console.log(categoryData);
+            // 表示用
+            switch (countInput) {
+                case 0:
+                    setDay(inputData);
+                    break;
+                case 1:
+                    // 入力したデータと該当カテゴリデータ確認
+                    if (!categoryData[parseInt(inputData) - 1]) {
+                        alert("there is not category data");
+                        return;
+                    }
+                    setCategory(categoryData[parseInt(inputData) - 1].category_name);
+                    break;
+                case 2:
+                    setMoney(inputData);
+                    break;
+                case 3:
+                    setNote(inputData)
+                    break;
+            }
+            if (countInput < 4) {
+
+                // 保存用の配列を作成
                 let arrayData: string[] = inputDataArray;
                 
-                arrayData[countInput] = inputData;
-    
+                // category選択の場合、category名で保存する
+                if (countInput === 1) {
+                    arrayData[countInput] = categoryData[parseInt(inputData) - 1].category_id.toString();
+                } else {
+                    arrayData[countInput] = inputData;
+                }
+                
+                // 入力を格納
                 setInputDataArray(arrayData);
+                // 次の項目へ移し、inputを初期化
                 setCountInput(countInput+1);
                 setInputData("");
-
-            }
-            console.log(inputDataArray, countInput);
-            if (countInput > 3) {
+                
+                // 入力後、expenseを保存し、countInputとinputDataArrayを初期化
+            } else if (countInput < 5) {
+                // setCountInput(countInput+1);
+                handleSaveInputData();
                 setCountInput(0);
                 setInputDataArray(["", "", "", ""]);
             }
-            
-            console.log(event.key, countInput);
+            console.log(inputDataArray);
         }
     }
-
-    console.log(sideBarIsOpen);
+    
+    useEffect(() => {
+        
+        const getCategory = handleGetAllCategory(1, year, month);
+        getCategory.then((res) => {
+            if (res.success && res.data && res.data.length > 0) {
+                setCategoryData(res.data);
+            } else {
+                setCategoryData([]);
+            }
+        });
+        // 初期化
+        handleInitial();
+    }, [isClickMonth, isCategoryUpdate])
+    
+    console.log("input data");
     return <>
         <div className={`input-data-body${isOpen ? "" : " body-close"}`}>
             <div className="input-data-show border-1p">
                 <span className="input-data-show-box">Mục đã nhập </span>
-                {/* <div className="input-data-show-day input-data-show-box">
+                <div className="input-data-show-day input-data-show-box">
                     <span className={`day-box ${day !== "" ? "font-bold" : ""}`}>Ngày </span>
                     <span>{day}</span>
                 </div>
@@ -132,13 +259,13 @@ function InputData({ sideBarIsOpen = true })
                 <div className="input-data-show-note input-data-show-box">
                     <span className={note !== "" ? "note-box font-bold": "note-box"}>Ghi chú </span>
                     <span>{note}</span>
-                </div> */}
-                {inputTitle.map((val, index) => (
+                </div>
+                {/* {inputTitle.map((val, index) => (
                     <div className="input-data-show-box" key={index}>
                         <span className={note !== "" ? "note-box font-bold": "note-box"}>{val} </span>
                         <span>{inputDataArray[index]}</span>
                     </div>
-                ))}
+                ))} */}
             </div>
             <div className="input-data-handle border-1p">
                 <div className="input-data-handle-category">
@@ -159,11 +286,9 @@ function InputData({ sideBarIsOpen = true })
                     {
                         countInput === 1 && isOpen ?
                             <CategoryTable 
-                                title={CategoryTitlte}
-                                body={CategoryBody}
-                            />
-                        : 
-                        []
+                                body={categoryData}
+                            /> : 
+                            []
                     }
                 </div>
                 <div className="input-data-handle-btn btn-icon">

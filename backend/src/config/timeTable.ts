@@ -6,7 +6,7 @@ const db = new Database(dbPath);
 
 
 // ================TYPE====================
-type typeFunctionHanldeWithDB<T> = {
+type functionHanldeWithDBType<T> = {
     success: boolean;
     data?: T;
     mess: string;
@@ -53,9 +53,9 @@ db.exec(`
  * @param colname       取得した列
  * @param sub           条件の対象     
  * @param condition     条件
- * @returns typeFunctionHanldeWithDB
+ * @returns functionHanldeWithDBType
  */
-export function getAll(mod: number, colname?: string, sub?: string, condition?: string): typeFunctionHanldeWithDB<timeTableType[]>
+export function getAll(mod: number, colname?: string, sub?: string, condition?: string): functionHanldeWithDBType<timeTableType[]>
 {
     let query: string = "SELECT * FROM times ORDER BY month ASC";
 
@@ -93,10 +93,11 @@ export function getAll(mod: number, colname?: string, sub?: string, condition?: 
 
 /**
  * 該当するデータを取得
- * @param data getAndSaveProps
- * @returns 
+ * @param year  年
+ * @param month 月
+ * @returns functionHanldeWithDBType　
  */
-export function getData(year: number, month: number): typeFunctionHanldeWithDB<getType>
+export function getData(year: number, month: number): functionHanldeWithDBType<getType>
 {
     try {
         const result = db.prepare(`SELECT time_id FROM times WHERE year = ? and month = ?`).get(year, month) as getType;
@@ -132,7 +133,7 @@ export function getData(year: number, month: number): typeFunctionHanldeWithDB<g
  * @param data saveDataProps
  * @returns 
  */
-export function saveData(data: getAndSaveProps): typeFunctionHanldeWithDB<saveTimeType>
+export function saveData(data: getAndSaveProps): functionHanldeWithDBType<saveTimeType>
 {
 
     try {
@@ -162,7 +163,7 @@ export function saveData(data: getAndSaveProps): typeFunctionHanldeWithDB<saveTi
  * @param timeId 
  * @returns 
  */
-export function deleteData(time_ids: number[]): typeFunctionHanldeWithDB<deleteTimeType>
+export function deleteData(time_ids: number[]): functionHanldeWithDBType<deleteTimeType>
 {
     try {
         const placeholders = time_ids.map(() => "?").join(",");
