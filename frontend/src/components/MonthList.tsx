@@ -1,20 +1,12 @@
-import { useEffect, useState } from "react";
-
-import { handleGetAllTime } from "../services/api";
-
-
-type selectMonthOfEachYearType = {
-    year: string;
-    months: string[];
-}
-type timeDbType = {
+type getTimeDateType = {
     time_id: number;
-    year: number;
+    year_id: number;
     month: number;
+    year_name: number
 }
 
 type MonthListProps = {
-    times?: timeDbType[];
+    times?: getTimeDateType[];
     handleClickMonth: (time_id: number, month: number) => void;
     handleCheckBoxMonth: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -27,11 +19,6 @@ type MonthListProps = {
  */
 function MonthList({ times ,handleCheckBoxMonth, handleClickMonth}:MonthListProps)
 {
-    // const [months, setMonths] = useState<string[]>([]);
-
-    // useEffect(() => {
-    //     const getTime = handleGetAllTime(year);
-    // }, [times]);
 
     return <>
         <div className="months-btn-area">

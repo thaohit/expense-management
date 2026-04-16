@@ -20,7 +20,7 @@ export function hasJapanese(target: any):boolean
 
 /**
  * 英語数字・文字チェック
- * * [0~9, a~Z]
+ * * [0-9, a-Z]
  * @param target 
  * @returns 
  */
@@ -38,8 +38,21 @@ export function checkString(target: any): boolean
  */
 export function checkNumber(target: any): boolean
 {
-
   const numberFormat = /^[0-9]+$/;
   return numberFormat.test(target);
 
 }
+
+/**
+ * ベトナム語チェック
+ * * [0-9a-zA-ZÀ-Ỹà-ỹ\s]
+ * @param target 
+ * @returns 
+ */
+export function checkVietNamese(target: any): boolean
+{
+  const numberFormat = /^(\d+|[0-9a-zA-ZÀ-Ỹà-ỹ\s]+)$/u;
+  return numberFormat.test(target);
+
+}
+

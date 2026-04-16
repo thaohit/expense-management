@@ -53,3 +53,21 @@
     height: 100%;
     padding: 2px;
 }
+
+.table-body .expense-update-btn {
+    transition: 0.3s ease-in-out;
+}
+
+.table-body .expense-update-btn:hover {
+    background-color: rgb(1, 192, 1);
+    color: #fff;
+}
+
+.table-body .expense-close-update-btn {
+    transition: 0.3s ease-in-out;
+}
+
+.table-body .expense-close-update-btn:hover {
+    background-color: rgb(255, 3, 3);
+    color: #fff;
+}

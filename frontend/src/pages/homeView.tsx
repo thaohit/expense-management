@@ -8,15 +8,11 @@ import EqualizerIcon from '@mui/icons-material/Equalizer';
 import AddAlertIcon from '@mui/icons-material/AddAlert';
 import FormatListBulletedAddIcon from '@mui/icons-material/FormatListBulletedAdd';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import CheckIcon from '@mui/icons-material/Check';
 import AddchartIcon from '@mui/icons-material/Addchart';
 
 // Components
 import Dropdown from '../components/Dropdown';
-import MonthList from '../components/MonthList'
 import BtnIcon from '../components/BtnIcon';
-import InputData from '../components/InputData';
-import Table from '../components/Table';
 import HomeMain from '../components/MainHome';
 import CategoryAddArea from '../components/CategoryAddArea';
 
@@ -43,18 +39,6 @@ type timeType = {
     month: number;
 }
 
-const months:string[] = [];
-const years:string[] = ["2024", "2025", "2026", "2027"];
-const titles:string[] =  ["Ngày", "Mục", "Số tiền", "Ghi chú"];
-const tableData:TableBody[] = [
-    {day: "1", category:"Eat", money: 2000, note: "khong gi"},
-    {day: "2", category:"Electronic", money: 3000, note: "Tiền điện"},
-    {day: "3", category:"Internet", money: 2400, note: "Tiền internet"},
-    {day: "4", category:"Presents", money: 10000, note: "Quà tặng ny"},
-    {day: "25", category:"House", money: 30000, note: ""}
-];
-
-
 /** function Home
  * ホームページ
  * @returns 
@@ -63,13 +47,12 @@ function Home() {
     
     const navigate = useNavigate();
     const [homeRenderCount, setHomeRenderCount] = useState<number>(0);          // ホームページのrender回数
-    const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
-    const [inputYear, setInputYear] = useState<string>("");                     // 年の値
     const [yearDB, setYearDB] = useState<yearDbType[]>([]);           
-    const [updateDataState, setUpdateDataState] = useState<boolean>(true);      // DBとの処理が実行された場合、re-render
     const [yearCheckBox, setYearCheckBox] = useState<number[]>([]);             // 選択した年のidのリスト
-
+    
+    const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
     const [isCategoryAdd, setIsCategoryAdd] = useState<boolean>(false);         // category追加画面を表示するか true or false
+    const [updateDataState, setUpdateDataState] = useState<boolean>(true);      // DBとの処理が実行された場合、re-render
     
     const [yearForComponent, setYearForComponent] = useState<number>(0);        // componentの年を設定
     const [monthForComponent, setMonthForComponent] = useState<number>(0);      // componentの月を設定
@@ -90,38 +73,31 @@ function Home() {
     }
 
     /**
-     * 
-     */
-    const handleDelYearBar = (): void => {
-
-    }
-
-    /**
      * 年保存ボタン押下の処理
      * 
      * @param data 
      * @param type 
      */
-    const hanldeSaveYearData = (data: number):void => {
+    const hanldeSaveYearData = (data: any): void => {
+
+        const numberFormat = /^[0-9]+$/;
+        if (!numberFormat.test(data)) {
+            alert("数字(0~9)で入力してください。")
+            return;
+        }
+
+        let year = parseInt(data);
         // データは空欄ではない場合実行
-        let errMess: string = "";
-        if (data !== 0) {
-            const resSaveYear = handleSaveYear(data);
+        if (year > 0) {
+            const resSaveYear = handleSaveYear(year);
             resSaveYear.then((res) => {
-                
-                console.log(data, res);
                 if (res.success) {
                     setUpdateDataState(!updateDataState);
-                } else {
-                    if (res.mess?.includes("UNIQUE")) {
-                        errMess = `${data}が既に存在した`;
-                    } else if (res.mess) {
-                        errMess = res.mess;
-                    }
-
-                    alert(errMess);
                 }
+                alert(res.mess);
             });
+        } else {
+            alert("0以上の数字を入力してください。")
         }
     }
 
@@ -138,11 +114,11 @@ function Home() {
                 if (res.success) {
                     setUpdateDataState(!updateDataState);
                     setYearCheckBox([]);
-                    alert(`delete ok ${data}`);
-                } else {
-                    alert(res.mess);
                 }
+                alert(res.mess);
             });
+        } else {
+            alert("yearを選択してください。")
         }
     }
 
@@ -162,7 +138,7 @@ function Home() {
             let delYearIdArrNum = delYearId.indexOf(value);
             delYearId.splice(delYearIdArrNum, 1)
         }
-
+        console.log(yearCheckBox);
         setYearCheckBox(delYearId);
     }
 
@@ -173,6 +149,7 @@ function Home() {
      * @param month 
      */
     const handleSelectTimeForMainAera = (time_id: number, year: number = 0, month: number = 0) => {
+        // Componentのタイムデータをセットする
         setYearForComponent(year);
         setMonthForComponent(month);
         setTimeForComponent({
@@ -198,22 +175,18 @@ function Home() {
             let data: yearDbType[] = []; // 初期化
 
             if (ignore === false) {
-                // console.log(res.data);
                 if (res.success) {
                     // 年のデータがある場合、dataに代入する
                     if(res.data && res.data.length > 0) {
                         data = res.data;
                     }
-                    console.log(res.data);
                     setYearDB(data);
                 }
             }
         });
-
         setHomeRenderCount(homeRenderCount + 1);
-
         return () => {ignore = true;} 
-
+        
     }, [updateDataState]);
 
     return <>
@@ -224,7 +197,7 @@ function Home() {
                             <AccountBoxSharpIcon />
                         </div>
                         <div className="dowm">
-                            <BtnIcon props={true} handleSave={handleDelYearBar}>
+                            <BtnIcon props={true}>
                                 <span onClick={changePage} title="Logout"><LogoutSharpIcon /></span>
                                 <span><EqualizerIcon /></span>
                                 <span><AddAlertIcon /></span>
@@ -240,6 +213,7 @@ function Home() {
                                 title="Year"
                                 style="medium"
                                 type="y"
+                                isUpdateData={updateDataState}
                                 handleData={yearCheckBox}
                                 handleSave={hanldeSaveYearData}
                                 handleDel={handleDelete}
@@ -252,8 +226,19 @@ function Home() {
                                         homeReCount={homeRenderCount}
                                         year={value.year_name}
                                         id={value.year_id}
+                                        selectedCheckBox={yearCheckBox}
                                         handleCheckBox={handleCheckBox}
                                         handleSelectTimeForMainAera={handleSelectTimeForMainAera}
+                                        handleSetIsUpdate={() => setUpdateDataState(!updateDataState)}
+                                        handleSetIsClickMonth={() => {
+                                            setTimeForComponent({
+                                                year: 0,
+                                                time_id: 0,
+                                                month: 0
+                                            });
+
+                                            setIsClickMonth(!isClickMonth);
+                                        }}
                                     />
                                 </div>
                             ))}

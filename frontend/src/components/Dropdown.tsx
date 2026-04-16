@@ -16,8 +16,11 @@ type DropDownProps = {
     homeReCount: number;            // ホームページのrender回数
     year: number;                   // 年
     id?: number;                    // year_id
-    handleSelectTimeForMainAera: (time_id: number, year: number, month: number) => void;                         // 月をクリックする処理
+    selectedCheckBox?: number[];     // 選択されているチェックボックス
+    handleSelectTimeForMainAera: (time_id: number, year: number, month: number) => void;  // 月をクリックする処理
     handleCheckBox: (e: React.ChangeEvent<HTMLInputElement>) => void;   // 月を選択する処理
+    handleSetIsUpdate: () => void;  // timeデータ削除後の状態を更新
+    handleSetIsClickMonth: () => void; // timeデータ削除後の状態を初期化
     children?: React.ReactNode;
 }
 
@@ -25,6 +28,13 @@ type timeDbType = {
     time_id: number;
     year: number;
     month: number;
+}
+
+type getTimeDateType = {
+    time_id: number;
+    year_id: number;
+    month: number;
+    year_name: number;
 }
 
 type selectMonthOfEachYearType = {
@@ -38,78 +48,104 @@ type selectMonthOfEachYearType = {
  * @param children monthList 
  * @returns 
  */
-function Dropdown({homeReCount, year, id, handleCheckBox, handleSelectTimeForMainAera}:DropDownProps)
+function Dropdown({
+    homeReCount,
+    year = 0,
+    id = 0,
+    selectedCheckBox,
+    handleCheckBox,
+    handleSelectTimeForMainAera,
+    handleSetIsUpdate,
+    handleSetIsClickMonth
+}:DropDownProps)
 {
-    const [timeData, setTimeData] = useState<timeDbType[]>([]);
+    const [timeData, setTimeData] = useState<getTimeDateType[]>([]);
     // Click Year and drop down month list
     const [isOpen, setIsOpen] = useState(false);                                    // 開閉の状態
     const [monthsForBtn, setMonthsForBtn] = useState<number[]>([]);                 // 削除処理用の月の選択したデータ
     const [updateDataState, setUpdateDataState] = useState<boolean>(false);         // DB
-    const [monthCheckBox, setMonthCheckBox] = useState<selectMonthOfEachYearType[]>([]
-    //     () => {
-    //     return [
-    //         {
-    //             year: "",     
-    //             months: []
-    //         }
-    //     ]
-    // }
-    );
+    const [monthCheckBox, setMonthCheckBox] = useState<selectMonthOfEachYearType[]>([]);
+    const [yearCheckBox, setYearCheckBox] = useState<number[]>([]);                 // ＊selectedCheckBoxとどっち使えるか次回確認
 
     /**
      * 保存ボタンの処理
      * @param data 
      * @param inputType 
      */
-    const handleSave = (data: number):void => {
+    const handleSave = (data: number): void => {
 
+        if (data < 0 || data > 12) {
+            alert("1~12の数値を入力してください！");
+            return;
+        }
         // 変数宣言
         // APIに渡すデータを調整する
         const makeDataToSave = {
-            year: year,
+            year_id: id,
             month: data
         };
-        let resMess: string = "";
-        console.log(`input month ${makeDataToSave.month} year ${makeDataToSave.year}`);
+        console.log(makeDataToSave);
+        // APIにデータを渡し、処理を要求する
         const resSaveTime = handleSaveTime(makeDataToSave);
         resSaveTime.then((res) => {
             if (res.success) {
                 setUpdateDataState(!updateDataState);
             }
-
-            if (res.mess) {
-                resMess = res.mess;
-            }
-
-            alert(resMess);
-        })
+            alert(res.mess);
+        });
     }
 
     /**
      * 削除ボタンの処理
+     * * チェックボックスで選択されたデータを削除するのを送信する
      * @param data 
      */
     const handleDelete = (data: number[]) => {
         
+        if (!confirm("月を削除する場合には支出・収入データとカテゴリデータも削除されます! \nよろしいですか?")) {
+            return;
+        } 
+
         const resDelTime = handleDeleteTime(data);
-        let message = "";
         resDelTime.then((res) => {
             if(res.success) {
                 setUpdateDataState(!updateDataState);
-                if (res.mess) {
-                    message = res.mess
-                }
+                handleSetIsUpdate();
+                handleSetIsClickMonth();
             }
-            alert(`Delete Ok ${message}`);
+            alert(res.mess);
         })
-        console.log("view delete ", resDelTime);
+    }
 
+    /**
+     * チェックボックス処理
+     * @param e 
+     */
+    const handleCheckBoxYear = (e: React.ChangeEvent<HTMLInputElement>) => {
 
+        //削除用のデータを送信
+        handleCheckBox(e);
+
+        // チェックボックスのselected用のデータをセットする
+        let value = parseInt(e.target.value);
+        setYearCheckBox((item) => {
+            console.log(item.includes(value));
+            if (item.includes(value)) {
+                return item.filter((val) => val !== value)
+            } else {
+                return [...item, value];
+            }
+        });
     }
 
     // -------------改善--------------
     // 改善が必要、今後時間があればする
     // チェックボックスに関する処理
+    /**
+     * 年ごとの月の選択処理
+     * * チェックボックス値を取得したり、除外したりする
+     * @param e 
+     */
     const handleCheckBoxMonth = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value: number = parseInt(e.target.value);
         console.log(value);
@@ -163,6 +199,12 @@ function Dropdown({homeReCount, year, id, handleCheckBox, handleSelectTimeForMai
         setMonthCheckBox(monthOfEachYear);
     }
 
+    /**
+     * 月辺りボタンを押下する処理
+     * * 受け取ったデータをメインに渡す
+     * @param time_id 
+     * @param month 
+     */
     const handleGetClickMonth = (time_id: number, month: number) => {
         handleSelectTimeForMainAera(time_id ,year, month);
     }
@@ -173,20 +215,18 @@ function Dropdown({homeReCount, year, id, handleCheckBox, handleSelectTimeForMai
         let ignore = false; // Clear up
         
         if (ignore === false) {
-            const getTime = handleGetAllTime(year);
+            const getTime = handleGetAllTime(id);
             getTime.then((res) => {
-                let timeData: timeDbType[] = [];
+                let timeData: getTimeDateType[] = [];
                 if (res.success) {
                     if (res.data && res.data.length > 0) {
                         timeData = res.data;
                     }
                 }
-                console.log(timeData);
                 setTimeData(timeData);
             });
             
         }
-        console.log("time render");
         return () => {ignore = true;} 
 
     }, [updateDataState])
@@ -197,19 +237,28 @@ function Dropdown({homeReCount, year, id, handleCheckBox, handleSelectTimeForMai
                 <button className="dropdown-btn" onClick={ () => setIsOpen(!isOpen)}>
                     <span>{year}</span>
                 </button>
-                <input type="checkbox" value={id} className="dropdown-up-check-box" onChange={(e) => handleCheckBox(e)}/>
+                <input
+                    type="checkbox"
+                    value={id}
+                    checked={yearCheckBox?.includes(id)}
+                    className="dropdown-up-check-box"
+                    onChange={(e) => handleCheckBoxYear(e)}
+                />
                 <span className={ isOpen ? "icon rotate" : "icon"}>
                     <ArrowDropDownIcon />
                 </span>
             </div>
             <div className={ isOpen ? "dropdown-down menu-open": "dropdown-down"}>
+                {/* 入力項目とボタン */}
                 <BtnIcon 
                     title="Month"
                     type="m"
+                    isUpdateData={updateDataState}
                     handleData={monthsForBtn}
                     handleSave={handleSave}
                     handleDel={handleDelete}
                 />
+                {/* 月のリスト */}
                 <MonthList 
                     times={timeData}
                     handleCheckBoxMonth={handleCheckBoxMonth}

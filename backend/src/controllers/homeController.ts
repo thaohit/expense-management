@@ -9,6 +9,10 @@ import * as expenseTable from "../config/expenseTable";
 
 import { checkNumber } from "../common/common";
 
+import * as yearsModel from "../models/YearsModel";
+import * as categoriesModel from "../models/CategoriesModel";
+import * as timesModel from "../models/TimesModel";
+import * as expensesModel from "../models/ExpensesModel";
 
 type dataType<T> = {
     time: T;
@@ -27,12 +31,13 @@ type yearTableType = {
 }
 
 type addYearQuery = {
-    addY: string;
+    year_id: string;
 }
 
 type getYearQuery = {
     year: string
 }
+
 // ==========TIME==========
 type timeTableType = {
     year?: number;
@@ -60,6 +65,14 @@ type updateCategoryType = {
 
 type deleteCategoryType = {
     category_id: string[];
+    time_id: number
+}
+
+type categoryTableType = {
+    category_id?: number,
+    category_name?: string,
+    year?: number,
+    month?: number,
 }
 
 // ==========EXPENSE==========
@@ -88,428 +101,540 @@ type requestExpenseDataType = {
 }
 
 /**
- * 月の一覧を取得
- * @param rep 
- * @param res 
- */
-export function viewTimev1(req: Request<{}, {}, {}, getYearQuery>, res: Response): void
-{
-    // 変数宣言
-    let result: apiResultType<timeTableType[]> = {
-        success: false,
-        mess: "There is not timedata"
-    };
-    let timeData: timeTableType[] = [];
-    let message: string = ""
-    let makeTimeData: timeTableType;
-    // {
-    //     year: "",
-    //     time_id: [],
-    //     month: []
-    // };
-    let paramY = req.query.year;
-    // let condition: string = `year = ${res.body.}`;
-
-    // 年の配列を作成する
-    // const getYears = yearTable.getAll();
-    // const years = getYears.data?.map((val) => val.year_name);
-
-    // データを全て取得
-    // years?.map((val) => {
-        // // 年ごとに、timeダータを取得
-        // const getTime = timeTable.getAll(1, "time_id, month", "year", val);
-
-        // let months: string[] = [];
-        // let time_ids: string[] = [];
-        // if (getTime.success && getTime.data && getTime.data.length > 0) {
-            
-        //     // timeTableからデータを取得したら、timeTalbeType用の変数に代入
-        //     getTime.data.map((valTime) => {
-        //         time_ids.push(valTime.time_id);
-        //         months.push(valTime.month);
-        //     })
-        //     // timeTableTypeにデータを格納するため、先にmakeTimeDataにデータを代入し形成
-        //     makeTimeData.year = val;
-        //     makeTimeData.time_id = time_ids;
-        //     makeTimeData.month = months;
-
-        //     timeData.push(makeTimeData)
-        // }
-
-    // });
-    const getTime = timeTable.getAll(1, "*", "year", paramY);
-
-    // if (!getTime.success) {
-    //     res.json(getTime);
-    //     return;
-    // } else {
-    //     if (getTime.data && getTime.data.length > 0) {
-            
-    //     }
-    // }
-    // 一時的に変数を使う、今後使わない場合、削除して良い
-    // message = getTime.mess;
-    
-    // ResquestのJSONを調整
-    // result = {
-    //     success: getTime.success,
-    //     data: timeData,
-    //     mess: message
-    // };
-    // console.log("viewtimev1 " , getTime);
-
-    res.json(getTime);
-    
-}
-
-/**
- * 
- * @param req 
- * @param res 
- */
-export function saveTimev1(req: Request, res: Response): void
-{
-    // 変数宣言
-    let result: apiResultType<[]>;
-    let message: string;
-    const reqData: {
-        year: number;
-        month: number;
-    } = req.body;
-
-    // 入力チェック
-    if (!checkNumber(reqData.month)) {
-        res.json({
-            success: false,
-            mess: `Month は数字で入力してください`
-        })
-        return;
-    }
-    // 既存データ確認
-    const getTimeId = timeTable.getData(reqData.year, reqData.month);
-
-    if (getTimeId.success && getTimeId.data && getTimeId.data.time_id !== 0) {
-        result = {
-            success: false,
-            mess: `${reqData.year}年の${reqData.month}月が存在しました！！`
-        }
-        res.json(result);
-        return;
-    }
-
-    const resSave = timeTable.saveData(reqData);
-
-    // 保存処理チェック
-    if (!resSave.success) {
-        message = resSave.mess;
-    } {
-        message = "Save time OK!";
-    }
-
-    // ResquestのJSONを調整
-    result = {
-        success: resSave.success,
-        mess: message
-    }
-
-    res.json(result);
-
-}
-
-/**
- * 
- * @param req 
- * @param res 
- */
-export function deleteTimev1(req: Request, res: Response): void
-{
-    // 変数宣言
-    let result: apiResultType<[]>;
-    let message: string;
-    const reqData = req.body;
-    const resDelete = timeTable.deleteData(reqData);
-    if (!resDelete.success) {
-        message = resDelete.mess;
-    } else {
-        message = "Delete time OK!!";
-    }
-
-    // ResquestのJSONを調整
-    result = {
-        success: resDelete.success,
-        mess: message
-    };
-
-    res.json(result);
-}
-
-/**
- * version: v1. 年の一覧を取得
+ * version: v2. timeのデータ一覧取得
  * * APIから一覧データ取得の要求を処理する
  * @param rep 
  * @param res 
  */
-export function viewYearv1(req: Request, res: Response): void
+export function viewTimev2(req: Request<{}, {}, {}, addYearQuery>, res: Response): void
 {
+    const reqData = req.query;
+    // リクエストデータ確認
+    if (timesModel.checkQueryForView(reqData)) {
+        const getData = timesModel.viewT(reqData.year_id);
 
-    // 変数宣言
-    let result: apiResultType<yearTableType[]>;
-    let years: yearTableType[] = [];
-    let message: string = "";
-
-    // 年の一覧を取得
-    const getYear = yearTable.getAll();
-    if (getYear.success && getYear.data) {
-        years = getYear.data;
-        message = "Get Year OK!!";
+        if (getData.success) {
+            console.log("VIEW TIME OK");
+        } else {
+            console.log("VIEW TIME NG");
+        }
+        res.json(getData);
+    } else {
+        console.log("リクエストにtime_idが存在しない。")
+        res.json({
+            success: false,
+            mess: "データ取得に失敗しました。"
+        })
     }
-
-    // ResponseのJSONを調整
-    result = {
-        success: getYear.success,
-        data: years,
-        mess: message
-    };
-
-    res.json(result);
 }
 
 /**
- * version: V1. 年保存処理
+ * version: v2. データ保存処理
+ * * APIから一覧データ取得の要求を処理する
+ * @param rep 
+ * @param res 
+ */
+export function saveTimev2(req: Request, res: Response): void
+{
+    // 変数宣言
+    const reqData = req.body;
+
+    if (timesModel.checkReqDataForSave(reqData)) {
+        const saveData = timesModel.saveT(reqData);
+        if (saveData.success) {
+            console.log("SAVE TIME OK");
+        } else {
+            console.log("SAVE TIME NG");
+        }
+        res.json(saveData);
+    } else {
+        console.log("SAVE TIME NG");
+        res.json({
+            success: false,
+            mess: "保存データが正しくない。"
+        })
+    }
+}
+
+/**
+ * version: v2. timeのデータを削除
+ * * APIから一覧データ取得の要求を処理する
+ * @param rep 
+ * @param res 
+ */
+export function deleteTimev2(req: Request, res: Response): void
+{
+    // 変数宣言
+    const reqData = req.body;
+
+    if (timesModel.checkReqDataForDelete(reqData)) {
+        const resDelete = timesModel.deleteT(reqData.time_ids);
+
+        if (resDelete.success) {
+            console.log("DELETE TIME OK");
+        } else {
+            console.log("DELETE TIME NG");
+        }
+
+        res.json(resDelete);
+    } else {
+        console.log("DELETE TIME NG");
+        res.json({
+            success: false,
+            mess: "削除データが存在しない。または削除データが正しくない。"
+        })
+    } 
+}
+
+/**
+ * version: V2. 年を更新
+ * * APIから処理要求を処理する
+ * 
+ * @param req 
+ * @param res 
+ */
+export function updateTimev2(req: Request, res: Response): void
+{
+    const reqData = req.body;
+    
+    if (timesModel.checkReqDataForUpdate(reqData)) {
+        const resUpdate = timesModel.updateT(reqData);
+
+        if (resUpdate.success) {
+            console.log("UPDATE TIME OK");
+        } else {
+            console.log("UPDATE TIME NG");
+        }
+
+        res.json(resUpdate);
+    } else {
+        console.log("UPDATE TIME NG");
+        res.json({
+            success: false,
+            mess: "更新データが存在しない。または更新データが正しくない。"
+        })
+    } 
+}
+
+/**
+ * version: v2. 年の一覧を取得
+ * * APIから一覧データ取得の要求を処理する
+ * @param rep 
+ * @param res 
+ */
+export function viewYearv2(req: Request, res: Response): void
+{
+    // 変数宣言
+    let result: apiResultType<yearTableType[]>;
+    let datas: yearTableType[] = [];
+    let message: string = "";
+
+    const getYears = yearsModel.viewY();
+    if (getYears.success) {
+        console.log("Get Years OK");
+    } else {
+        console.log("Get Years NG");
+    }
+
+    res.json(getYears);
+}
+
+/**
+ * version: V2. 年保存処理
  * * APIから保存要求を処理する
  * @param req 
  * @param res 
  * @returns 処理後、
  */
-export function saveYearv1(req: Request<{}, {}, {}, addYearQuery>, res: Response): void
+export function saveYearv2(req: Request, res: Response): void
 {
     // 変数宣言
-    const year = parseInt(req.query.addY);
-    // const year = req.query.addY;
-    // const year = req.query.addY as string;
-    let result: apiResultType<[]>;
-    // yearの型チェック
-    // if (typeof year !== "string") {
-    //     res.status(400).json({
-    //         success: false,
-    //         mess: "Invalid year"
-    //     });
-    //     return;
-    // }
+    const reqData = req.body;
+    if (yearsModel.checkReqDataForSave(reqData)) {
+        const saveData = yearsModel.saveY(reqData);
+        if (saveData.success) {
+            console.log("Save Year OK");
+        } else {
+            console.log("Save Year NG");
+        }
 
-    if (!checkNumber(year)) {
+        res.json(saveData);
+    } else {
+        console.log("Save Year NG");
         res.json({
             success: false,
-            mess: `Year は数字で入力してください`
+            mess: "入力データが存在しない。または正しくない。"
         })
-        return;
     }
-    const resSave = yearTable.saveData(year);
-    
-    // ResponseのJSONを調整
-    result = {
-        success: resSave.success,
-        mess: resSave.mess
-    };
-    res.json(result);
 }
 
 /**
- * version: V1. 年を削除
+ * version: V2. 年を削除
  * * APIから処理要求を処理する
  * 
  * @param req 
  * @param res 
  */
-export function deleteYearv1(req: Request, res: Response): void
+export function deleteYearv2(req: Request, res: Response): void
 {
-    const years = req.body as number[];
+    const reqData = req.body;
+    
+    if (yearsModel.checkReqDataForDelete(reqData)) {
+        const resDelete = yearsModel.deleteY(reqData.year_ids);
 
-    let result: apiResultType<[]>;
+        if (resDelete.success) {
+            console.log("DELETE YEAR OK");
+        } else {
+            console.log("DELETE YEAR NG");
+        }
 
-    // if (typeof years !== "string") {
-    //     res.status(400).json({ message: ""});
-    // }
-
-    const resDelete = yearTable.deleteData(years);
-    result = {
-        success: false,
-        mess: "test"
-    }
-
-    res.json(resDelete);
-}
-
-export function updateYearv1(req: Request, res: Response): void
-{
-
+        res.json(resDelete);
+    } else {
+        console.log("DELETE YEAR NG");
+        res.json({
+            success: false,
+            mess: "削除データが存在しない。または削除データが正しくない。"
+        })
+    } 
 }
 
 /**
- * version: V1. categoryの一覧を取得
+ * version: V2. 年を更新
+ * * APIから処理要求を処理する
+ * 
+ * @param req 
+ * @param res 
+ */
+export function updateYearv2(req: Request, res: Response): void
+{
+    const reqData = req.body;
+    
+    if (yearsModel.checkReqDataForUpdate(reqData)) {
+        const resUpdate = yearsModel.updateY(reqData);
+
+        if (resUpdate.success) {
+            console.log("UPDATE YEAR OK");
+        } else {
+            console.log("UPDATE YEAR NG");
+        }
+
+        res.json(resUpdate);
+    } else {
+        console.log("UPDATE YEAR NG");
+        res.json({
+            success: false,
+            mess: "更新データが存在しない。または更新データが正しくない。"
+        })
+    } 
+}
+
+/**
+ * version: V2. categoryの一覧を取得
  * * APIから処理要求を処理する
  * @param req 
  * @param res 
  */
-export function viewCategoryv1(req: Request<{}, {}, {}, getCategoryType>, res: Response): void
+export function viewCategoryv2(req: Request, res: Response): void
 {
-    const mod = parseInt(req.query.mode);
-    const year = parseInt(req.query.year);
-    const month = parseInt(req.query.month);
-    const result = categoryTable.getAll(mod, year, month);
+    const reqQuery = req.query;
 
-    res.json(result);
+    if (categoriesModel.checkQueryForView(reqQuery)) {
+        const getData = categoriesModel.viewC(reqQuery.time_id);
+        if (getData.success) {
+            console.log("GET CATEGORY OK");
+        } else{
+            console.log("GET CATEGORY NG");
+        }
+        res.json(getData);
+    } else {
+        console.log("GET CATEGORY NG");
+        res.json({
+            success: false,
+            mess: "timeデータが存在しない。またはデータが正しくない"
+        })
+    }
+}
 
+/**
+ * version: V1. yearごとのcategoryを取得
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function getLitsCategoryByYearv1(req: Request, res: Response): void
+{
+    
+    const getCategory = categoriesModel.getCategoryByYear();
+    if (getCategory) {
+        console.log("GET CATEGORY LIST BY YEAR OK");
+    } else {
+        console.log("GET CATEGORY LIST BY YEAR NG");
+    }
+
+    res.json(getCategory);
+}
+
+/**
+ * version: V2. categoryを保存
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function saveCategoryv2(req: Request, res: Response): void
+{
+    // 変数宣言
+    const reqData = req.body;
+
+    //リクエストデータ確認
+    if (categoriesModel.checkReqDataForSave(reqData)) {
+        const saveData = categoriesModel.saveC(reqData);
+        if (saveData.success) {
+            console.log("SAVE CATEGORY OK");
+        } else {
+            console.log("SAVE CATEGORY NG");
+        }
+
+        res.json(saveData);
+    } else {
+        console.log("SAVE CATEGORY NG");
+        res.json({
+            success: false,
+            mess: "入力データが存在しない。または正しくない。"
+        })
+    }
 }
 
 /**
  * version: V1. categoryを保存
+ * * 既存のデータを削除し、選択された年ごとのカテゴリーを保存する
  * * APIから処理要求を処理する
  * @param req 
  * @param res 
  */
-export function saveCategoryv1(req: Request, res: Response): void
+export function saveCategoryByYearv1(req: Request, res: Response): void
 {
-    const reqData = req.body as saveCategoryType;
-    const result = categoryTable.saveData(reqData);
+    // 変数宣言
+    const reqData: {caData: any[], time_id: number} = req.body;
+    let result: boolean[] = [];
+    let messenger: string = "";
+    console.log(reqData);
+    //リクエストデータ確認
+    if ("caData" in reqData && "time_id" in reqData){
+        if (reqData.caData instanceof Array) {
+        const checkData = reqData.caData.every((val) => categoriesModel.checkReqDataForSave({...val, time_id: reqData.time_id}) === true);
+        if (checkData === true) {
+            const deleteId = [reqData.caData[0].time_id];
+            // 既存データを削除する
+            const deleteData = categoriesModel.deleteC(deleteId);
+            if (deleteData.success) {
+                reqData.caData.map((val: object) => {
+                    // 新しいデータを保存する
+                    const saveData = categoriesModel.saveC({...val, time_id: reqData.time_id});
+                    if (saveData.success) {
+                        console.log("SAVE CATEGORY BY YEAR OK");
+                    } else {
+                        console.log("SAVE CATEGORY BY YEAR NG");
+                    }
+                    result.push(saveData.success);
+                });
 
-    
-    res.json(result);
-
-}
-
-
-/**
- * version: V1. categoryを削除
- * * APIから処理要求を処理する
- * @param req 
- * @param res 
- */
-export function deleteCategoryv1(req: Request, res: Response): void
-{
-    const reqData = req.body as string[];
-    const ids: number[] = reqData.map(Number);
-    const result = categoryTable.deleteData(ids);
-    
-    res.json(result);
-
-}
-
-/**
- * version: V1. categoryを更新
- * * APIから処理要求を処理する
- * @param req 
- * @param res 
- */
-export function updateCategoryv1(req: Request, res: Response): void
-{
-    const reqData = req.body as updateCategoryType;
-    const id: number = parseInt(reqData.category_id);
-    const name: string = reqData.category_name;
-    const result = categoryTable.updateData(id, name);
-
-    
-    res.json(result);
-
-}
-
-export function saveExpensev1(req: Request, res: Response): void
-{
-    const reqData = req.body as string[];
-    
-    // const makeSaveData: object = {
-    //     day: parseInt(reqData.day),
-    //     category_id: parseInt(reqData.category_id),
-    //     money: parseInt(reqData.money),
-    //     note: reqData.note,
-    //     time_id: reqData.time_id
-    // }
-
-    // const makeData: getAllType = {
-    //     expense_id: 0,
-    //     day: ,
-
-
-    // }
-
-    let testt: getAllType = {
-        expense_id: 0,
-        day: 0,
-        money: 0,
-        note: "",
-        time_id: 0,
-        category_id: 0,
-        category_name: ""
-    };
-    reqData.map((val, index) => {
-        switch (index){
-            case 0:
-                testt.day = parseInt(val);
-                break;
-            case 1:
-                testt.category_id = parseInt(val);
-                break;
-            case 2:
-                testt.money = parseInt(val);
-                break;
-            case 3:
-                testt.note = val;
-                break;
-            case 4:
-                testt.time_id = parseInt(val);
-                break;
+                res.json({
+                    success: result.every((val) => val === true),
+                    mess: messenger
+                });
+            }
         }
-    })
-    const result = expenseTable.saveData(testt); 
-    console.log(result);
-    res.json(result);
 
-}
-
-export function viewExpensev1(req: Request<{}, {}, {}, getExpenseQuery>, res: Response): void
-{
-    const reqTimeID = req.query.time_id;
-    const result = expenseTable.getAll(parseInt(reqTimeID));
-    console.log("view", reqTimeID,result);
-
-    res.json(result);
-}
-
-export function deleteExpensev1(req: Request, res: Response): void
-{
-    const ids: string[] = req.body;
-    let changeId: number[] = [];
-    if (ids.length > 0) {
-        changeId = ids.map((val) => parseInt(val));
-        const result = expenseTable.deleteData(changeId);
-        
-        res.json(result);
+        } else {
+            console.log("SAVE CATEGORY NG");
+            res.json({
+                success: false,
+                mess: "入力データが存在しない。または正しくない。"
+            })
+        }
     } else {
+        console.log("SAVE CATEGORY NG");
         res.json({
             success: false,
-            mess: "There is not expense_id"
-        })
-        return;
+            mess: "カテゴリーデータが不正な値です。"
+        });
     }
+}
 
+/**
+ * version: V2. categoryを削除
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function deleteCategoryv2(req: Request, res: Response): void
+{
+    const reqData = req.body;
+    
+    // リクエストデータ確認
+    if (categoriesModel.checkReqDataForDelete(reqData)) {
+        const resDelete = categoriesModel.deleteC(reqData.category_ids);
+
+        if (resDelete.success) {
+            console.log("DELETE CATEGORY OK");
+        } else {
+            console.log("DELETE CATEGORY NG");
+        }
+
+        res.json(resDelete);
+    } else {
+        console.log("DELETE CATEGORY NG");
+        res.json({
+            success: false,
+            mess: "削除データが存在しない。または削除データが正しくない。"
+        })
+    } 
 
 }
 
-export function updateExpensev1(req: Request, res: Response): void
+/**
+ * version: V2. categoryを更新
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function updateCategoryv2(req: Request, res: Response): void
 {
-    const datas = req.body as requestExpenseDataType;
+    const reqData = req.body;
+    
+    // リクエストデータ確認
+    if (categoriesModel.checkReqDataForUpdate(reqData)) {
+        const resUpdate = categoriesModel.updateC(reqData);
 
-    const makeData: getAllType = {
-        day: parseInt(datas.day),
-        category_id: parseInt(datas.category_id),
-        money: parseInt(datas.money),
-        note: datas.note,
-        expense_id: parseInt(datas.expense_id),
-        category_name: datas.category_name,
-        time_id: 0
-    };
+        if (resUpdate.success) {
+            console.log("UPDATE CATEGORY OK");
+        } else {
+            console.log("UPDATE CATEGORY NG");
+        }
+
+        res.json(resUpdate);
+    } else {
+        console.log("UPDATE CATEGORY NG");
+        res.json({
+            success: false,
+            mess: "更新データが存在しない。または更新データが正しくない。"
+        })
+    } 
+
+}
+
+/**
+ * version: V2. expensesデータ一覧を取得
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function viewExpensev2(req: Request, res: Response): void
+{
+    const reqQuery = req.query;
+
+    if (expensesModel.checkReqDataForView(reqQuery)) {
+        const getData = expensesModel.viewE(reqQuery.time_id);
+        if (getData.success) {
+            console.log("GET EXPENSES OK");
+        } else{
+            console.log("GET EXPENSES NG");
+        }
+        res.json(getData);
+    } else {
+        console.log("GET EXPENSES NG");
+        res.json({
+            success: false,
+            mess: "timeデータが存在しない。またはデータが正しくない"
+        })
+    }
+}
+
+/**
+ * version: V2. expenses保存
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function saveExpensev2(req: Request, res: Response): void
+{
+    // 変数宣言
+    const reqData = req.body;
+
+    //リクエストデータ確認
+    if (expensesModel.checkReqDataForSave(reqData)) {
+        const saveData = expensesModel.saveE(reqData);
+        if (saveData.success) {
+            console.log("SAVE EXPENSE OK");
+        } else {
+            console.log("SAVE EXPENSE NG");
+        }
+
+        res.json(saveData);
+    } else {
+        console.log("SAVE EXPENSE NG");
+        res.json({
+            success: false,
+            mess: "入力データが存在しない。または正しくない。"
+        })
+    }
+
+}
+
+/**
+ * version: V2. expenseを削除
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function deleteExpensev2(req: Request, res: Response): void
+{
+    const reqData = req.body;
     
-    const result = expenseTable.updateData(makeData);
+    // リクエストデータ確認
+    if (expensesModel.checkReqDataForDelete(reqData)) {
+        const resDelete = expensesModel.deleteE(reqData.expense_ids);
+
+        if (resDelete.success) {
+            console.log("DELETE EXPENSE OK");
+        } else {
+            console.log("DELETE EXPENSE NG")
+        }
+
+        res.json(resDelete);
+    } else {
+        console.log("DELETE EXPENSE NG")
+        res.json({
+            success: false,
+            mess: "削除データが存在しない。または削除データが正しくない。"
+        })
+    } 
+}
+/**
+ * version: V2. expenseを更新
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function updateExpensev2(req: Request, res: Response): void
+{
+    const reqData = req.body;
     
-    res.json(result);
+    if (expensesModel.checkReqDataForUpdate(reqData)) {
+        const resUpdate = expensesModel.updateE(reqData);
+
+        if (resUpdate.success) {
+            console.log("UPDATE EXPENSE OK");
+        } else {
+            console.log("UPDATE EXPENSE NG")
+        }
+
+        res.json(resUpdate);
+    } else {
+        console.log("UPDATE EXPENSE NG")
+        res.json({
+            success: false,
+            mess: "更新データが存在しない。または更新データが正しくない。"
+        })
+    } 
 }

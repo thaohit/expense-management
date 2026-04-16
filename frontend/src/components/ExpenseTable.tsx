@@ -11,7 +11,7 @@ import CategorySelectList from './CategorySelectList';
 /**
  * 
  */
-type TableBody = {
+type ExpenseTableBody = {
     expense_id: number;
     day: number;
     money: number;
@@ -20,9 +20,23 @@ type TableBody = {
     category_name: string;
 };
 
+type UpdateExpenseTableBody = {
+    expense_id: number;
+    day: number;
+    money: number;
+    note: string;
+    category_id: number;
+};
+
+type timeType = {
+    time_id: number;
+    year: number;
+    month: number;
+}
+
 type TableProps = {
     title: string[];
-    body: TableBody[];
+    body: ExpenseTableBody[];
     year: number;
     month: number;
     isUpdate: boolean;
@@ -32,20 +46,16 @@ type TableProps = {
 };
 
 type ExpenseTableProps = {
-    body: TableBody[];
+    body: ExpenseTableBody[];
     year: number;
     month: number;
+    time: timeType;
     isUpdate: boolean;
     isClickMonth: boolean;
     isCategoryUpdate?: boolean;
     handleDelete: (ids: number[]) => void;
     handleUpdate: (data: any) => void;
 };
-
-type Props = { 
-    value: string;
-    handleSet?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
 
 type categoryDataType = {
     category_id: number;
@@ -63,13 +73,15 @@ function ExpenseTable({
     body,
     year,
     month,
+    time,
     isClickMonth,
     isUpdate,
     isCategoryUpdate,
     handleDelete,
     handleUpdate
 }: ExpenseTableProps){
-    const [expense_id, setExpenseID] = useState<number>(0);
+    const [expenseId, setExpenseID] = useState<number>(0);
+    const [categoryId, setCategoryId] = useState<number>(0);
     const [day, setDay] = useState<string>("");
     const [category, setCategory] = useState<string>("");
     const [money, setMoney] = useState<string>("");
@@ -88,23 +100,29 @@ function ExpenseTable({
         setIsEdit(false);
         // 初期化
         setArrId(-1);
+        setExpenseID(0);
+        setCategoryId(0);
         setDay("");
         setCategory("");
         setMoney("");
         setNote("");
         setIsCheckAll(false);
     }
+
+    /**
+     * データ更新処理
+     * * データ形成し、親関数を呼び出す
+     */
     const Update = () => {
         
-        const makeData: TableBody = {
-            expense_id: expense_id,
+        const makeData: UpdateExpenseTableBody = {
+            expense_id: expenseId,
             day: parseInt(day),
-            category_id: parseInt(category),
+            category_id: categoryId,
             money: parseInt(money),
-            note: note,
-            category_name: ""
+            note: note
         };        
-        console.log(makeData);
+        console.log("update", makeData);
         handleUpdate(makeData);
         // handleInitial();
     }
@@ -147,15 +165,15 @@ function ExpenseTable({
     }
 
     /**
-     * 
+     * buttonとradio buttonの状態切り替え
      * @param param0 
      * @returns 
      */
     const BtnAndCheckBox: React.FC<{id: number, value: number}> = ({id, value}) => {
         return arrId === id && isEdit ?
             <>
-                <button type="button" onClick={Update}>O</button>
-                <button type="button" onClick={Close}>X</button>
+                <button type="button" className="expense-update-btn hover-green" onClick={Update}>O</button>
+                <button type="button" className="expense-close-update-btn hover-red" onClick={Close}>X</button>
             </> :
             <input
                 type="checkbox"
@@ -172,8 +190,8 @@ function ExpenseTable({
      * @param expense_id 
      * 
      */
-    const handleClickForUpdate = (array_id: number, expense_id:number) => {
-
+    const handleClickForUpdate = (array_id: number, expense_id:number, category_id?: number) => {
+        console.log(array_id, expense_id);
         // 更新モードへ変換
         setIsEdit(true);
         // 選択した行の配列の要素番号
@@ -181,6 +199,9 @@ function ExpenseTable({
         // 選択した行のデータを一時的の変数にセットする
         setExpenseID(expense_id);
         setDay(body[array_id].day.toString());
+        if (category_id) {
+            setCategoryId(category_id);
+        }
         // setCategory(body[array_id].category_name);
         setMoney(body[array_id].money.toString());
         setNote(body[array_id].note);
@@ -192,24 +213,24 @@ function ExpenseTable({
      * @param e 
      */
     const handleChooseCategory = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        let value = e.target.value;
 
-        setCategory(e.target.value.toString());
+        setCategory(value.toString());
+        setCategoryId(parseInt(value));
     }
 
 
     useEffect(() => {
-        // console.log(checkBox);
     }, [checkBox]);
     
     useEffect(() => {
         setCheckBox([]);
         handleInitial();
-        // console.log(checkBox);
     }, [isUpdate, isClickMonth]);
 
     useEffect(() => {
         
-        const getCategory = handleGetAllCategory(1, year, month);
+        const getCategory = handleGetAllCategory(time.time_id);
         getCategory.then((res) => {
             if (res.success && res.data && res.data.length > 0) {
                 console.log(res.data);
@@ -222,14 +243,13 @@ function ExpenseTable({
         // 初期化
         handleInitial();
     }, [isClickMonth, isCategoryUpdate]);
-
+    console.log(body);
     return <>
         <div className="create-table">
             <h4>
                 {year === 0 ? "" : year}年{month === 0 ? "" : month}月の収入・支出リスト一覧
             </h4> 
-            <button type="button" onClick={() => handleDelete(checkBox)}>Delete</button>
-            <button type="button" onClick={() => handleUpdate(checkBox)}>Update</button>
+            <button type="button" className="" onClick={() => handleDelete(checkBox)}>Delete</button>
             
             <div className="expense-table">
                 <div className="table-header">
@@ -242,7 +262,7 @@ function ExpenseTable({
                     </ul>
                 </div>
                 {body.map((val, index) => (
-                    <ul className="table-body" key={index} onDoubleClick={() => handleClickForUpdate(index, val.expense_id)}>
+                    <ul className="table-body" key={index} onDoubleClick={() => handleClickForUpdate(index, val.expense_id, val.category_id)}>
                         <li><BtnAndCheckBox id={index} value={val.expense_id}/></li>
                         <li>
                             <InputAndP

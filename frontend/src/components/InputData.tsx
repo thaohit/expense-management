@@ -19,6 +19,7 @@ import { handleGetAllCategory, handleSaveExpense } from '../services/api';
 type categoryDataType = {
     category_id: number;
     category_name: string;
+    category_type: number;
 };
 
 type InputDataType = {
@@ -30,6 +31,14 @@ type timeType = {
     time_id: number;
     year: number;
     month: number;
+}
+
+type saveDataType = {
+    day: number;
+    category_id: number;
+    money: number;
+    note: string;
+    time_id: number;
 }
 
 // 
@@ -65,10 +74,10 @@ function InputData({
 }: inputDataProps) 
 {
     // 表示用
-    const [day, setDay] = useState<string>("");
-    const [category, setCategory] = useState<string>("");
-    const [money, setMoney] = useState<string>("");
-    const [note, setNote] = useState<string>("");
+    const [day, setDay] = useState<string>("");             // 日の入力値
+    const [category, setCategory] = useState<string>("");   // カテゴリの入力値
+    const [money, setMoney] = useState<string>("");         // お金の入力値
+    const [note, setNote] = useState<string>("");           // 備考の入力値
 
     // inputのplaceholdel設定
     const [placehol, setPlacehol] = useState<string[]>(
@@ -82,13 +91,14 @@ function InputData({
     );
     const [inputTitle, setInputTitle] = useState<string[]>(["Ngày", "Mục", "Số tiền", "Ghi chú", ""]);
     const [inputDataArray, setInputDataArray] = useState<string[]>(["", "", "", ""]);
+    const [keyForSave, setKeyForSave] = useState<string[]>(["day", "category_id", "money", "note"]);
 
-    const [isOpen, setIsOpen] = useState<boolean>(true);                                    // inputData開閉状態
-    
     const [countInput, setCountInput] = useState<number>(0);                                // 入力番目
     const [inputData, setInputData] = useState<string>("");                                 // データ入力
-
     const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);               // category_tableのデータを設定
+    const [returnCategory, setReturnCategory] = useState<string>("");                        // categoryを戻す処理用のデータ
+    
+    const [isOpen, setIsOpen] = useState<boolean>(true);                                    // inputData開閉状態
 
     /**
      * expenseデータ保存処理
@@ -96,29 +106,32 @@ function InputData({
     const handleSaveInputData = () => {
         console.log([...inputDataArray, time.time_id.toString()]);
 
-        const saveExpense = handleSaveExpense([...inputDataArray, time.time_id.toString()]);
+        const makeDataForSave: saveDataType = {
+            day: parseInt(inputDataArray[0]),
+            category_id: parseInt(inputDataArray[1]),
+            money: parseInt(inputDataArray[2]),
+            note: inputDataArray[3],
+            time_id: time.time_id,
+        }
+        const saveExpense = handleSaveExpense(makeDataForSave);
         saveExpense.then((res) => {
-            console.log(res);
-            if (res.success && res.data && res.data.id !== 0) {
-                // expense table更新された場合、状態更新
+            // expense table更新された場合、状態更新
+            if (res.success) {
                 getIsUpdateData();
                 handleInitial();
-
             }
+            console.log(res.mess);
         })
     }
-
-    const handleInputData = () => {
-        
-    }
-
-
-    // 初期化処理
+    /**
+     * 初期化処理
+     */
     const handleInitial = () => {
 
         setCountInput(0);
         setInputDataArray(["", "", "", ""]);
         setInputData("");
+        setReturnCategory("");
 
         // 表示用初期化
         setDay("");
@@ -126,17 +139,23 @@ function InputData({
         setMoney("");
         setNote("")
     }
+
+    /**
+     * 入力を戻す処理
+     */
     const handleReturnData = () => {
 
         if (countInput > 0) {
 
             // 表示用
-            switch (countInput) {
+            let count = countInput - 1;
+            switch (count) {
                 case 0:
                     setDay("");
                     break;
                 case 1:
                     setCategory("");
+                    setReturnCategory("");
                     break;
                 case 2:
                     setMoney("");
@@ -147,17 +166,27 @@ function InputData({
             }
 
             let arrayData: string[] = inputDataArray;
-            let count = countInput;
-            arrayData[count] = "";
             
-            setInputData(arrayData[count - 1]);
+            // カテゴリ配列要素格納
+            if (count === 1) {
+                setInputData(returnCategory);
+            } else {
+                setInputData(arrayData[count]);
+            }
+            
+            console.log(arrayData, count, arrayData[count]);
+            // １個前の要素を初期化
+            arrayData[count] = "";
+            // 保存用の配列をセットする
             setInputDataArray(arrayData);
             setCountInput(countInput-1);
         } 
     }
 
     /**
-     * 
+     * Enterキー押下後の処理
+     * * 入力したデータを一時的に保存する
+     * * ４つまで入力されている場合、Enterキーを押下すると保存処理を実行する
      * @param event 
      */
     const handleEnterKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -188,6 +217,7 @@ function InputData({
                         return;
                     }
                     setCategory(categoryData[parseInt(inputData) - 1].category_name);
+                    setReturnCategory(inputData);
                     break;
                 case 2:
                     setMoney(inputData);
@@ -217,6 +247,7 @@ function InputData({
                 // 入力後、expenseを保存し、countInputとinputDataArrayを初期化
             } else if (countInput < 5) {
                 // setCountInput(countInput+1);
+                //保存
                 handleSaveInputData();
                 setCountInput(0);
                 setInputDataArray(["", "", "", ""]);
@@ -227,7 +258,7 @@ function InputData({
     
     useEffect(() => {
         
-        const getCategory = handleGetAllCategory(1, year, month);
+        const getCategory = handleGetAllCategory(time.time_id);
         getCategory.then((res) => {
             if (res.success && res.data && res.data.length > 0) {
                 setCategoryData(res.data);
@@ -239,7 +270,7 @@ function InputData({
         handleInitial();
     }, [isClickMonth, isCategoryUpdate])
     
-    console.log("input data");
+    // console.log("input data");
     return <>
         <div className={`input-data-body${isOpen ? "" : " body-close"}`}>
             <div className="input-data-show border-1p">
@@ -287,6 +318,7 @@ function InputData({
                         countInput === 1 && isOpen ?
                             <CategoryTable 
                                 body={categoryData}
+                                choosedTarget={inputData}
                             /> : 
                             []
                     }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import '../css/btnicon.css';
 
@@ -15,6 +15,7 @@ type BtnIconProps = {
     title?: string;                     // icon-barのタイトル
     type?: string;                      // month or year
     style?: SvgIconProps["fontSize"];   // iconのサイズ
+    isUpdateData?: boolean;
     handleData?: number[];              // 処理したいデータ
     handleAdd?: () => void;             // 追加ボタンの処理
     handleDel?: (data: number[]) => void;             // 削除ボタンの処理
@@ -38,6 +39,7 @@ function BtnIcon(
         title = "",
         style = "small",
         handleData = [],
+        isUpdateData,
         handleAdd,
         handleDel,
         handleSave,
@@ -49,6 +51,10 @@ function BtnIcon(
     const [isAdd, setIsAdd] = useState<boolean>(false);             // 追加ボタン押下状態 true | false
     const [isClickAdd, setIsClickAdd] = useState<boolean>(false);
     // const []
+
+    useEffect(() => {
+        setInputData("");
+    }, [isUpdateData]);
 
     return <>
         <div className="icon">
@@ -62,6 +68,7 @@ function BtnIcon(
                             name="bar-title"
                             className="bar-title"
                             placeholder="2000"
+                            value={inputData}
                             style={{width:"100%", height:"80%"}}
                             onChange={(e:React.ChangeEvent<HTMLInputElement>) => (setInputData(e.target.value))}
                             />
@@ -77,9 +84,9 @@ function BtnIcon(
                         {isAdd ?
                             <span onClick={() => {
                                 if (handleSave) {
-                                    handleSave(parseInt(inputData))}
+                                    handleSave(parseInt(inputData));
                                 }
-                            }
+                            }}
                             ><CheckIcon /></span>
                         :
                          null

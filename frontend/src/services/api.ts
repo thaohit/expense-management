@@ -6,9 +6,9 @@ APIについての処理
 
 
 type apiResultType<T> = {
-    success?: boolean;
+    success: boolean;
     data?: T;
-    mess?: string;
+    mess: string;
 };
 // ==========YEAR==========
 type yearDbType = {
@@ -22,8 +22,15 @@ type timeDbType = {
     month: number;
 }
 
+type getTimeDateType = {
+    time_id: number;
+    year_id: number;
+    month: number;
+    year_name: number;
+}
+
 type timeSaveDbType = {
-    year: number;
+    year_id: number;
     month: number;
 }
 // ==========CATEGORY==========
@@ -38,6 +45,25 @@ type categoryTableSaveType = {
 
 type categoryTableUpdateType = {
     change_num: number;
+}
+
+type categoryTableType = {
+    category_id: number;
+    category_name: string;
+    category_type: number;
+    time_id: number;
+}
+
+// 年ごとのカテゴリーリストタイプ
+type categoryListByYear = {
+    month: number;
+    year_name: number;
+    time_id: number;
+    categoryData: {
+        category_id: number;
+        category_name: string;
+        category_type: number;
+    }[];
 }
 
 // ==========EXPENSE==========
@@ -127,7 +153,7 @@ export async function hanldePostDataRegister(params:object):Promise<object> {
 export async function handleGetAllYear(): Promise<apiResultType<yearDbType[]>>
 {    
     try {
-        const apiRes = await fetch("http://localhost:3000/home/api/v1/all-year", {
+        const apiRes = await fetch("http://localhost:3000/home/api/v2/year", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -163,11 +189,12 @@ export async function handleSaveYear(year: number): Promise<apiResultType<number
 {
 
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/year?addY=${year}`,  {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/year`,  {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            body: JSON.stringify({year: year})
         });
 
         if (!apiRes.ok) {
@@ -193,19 +220,19 @@ export async function handleSaveYear(year: number): Promise<apiResultType<number
 
 /**
  * year_tabelのデータ削除を要求
- * @param year_ids string[]
+ * @param data year_ids string[]
  * @returns 
  */
-export async function handleDeleteYear(year_ids: number[]): Promise<apiResultType<number[]>>
+export async function handleDeleteYear(datas: number[]): Promise<apiResultType<number[]>>
 {
-    if (year_ids.length > 0) {
+    if (datas.length > 0) {
         try {
-            const apiRes = await fetch("http://localhost:3000/home/api/v1/year", {
+            const apiRes = await fetch("http://localhost:3000/home/api/v2/year", {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(year_ids)
+                body: JSON.stringify({year_ids: datas})
             });
     
             if (!apiRes.ok) {
@@ -239,10 +266,10 @@ export async function handleDeleteYear(year_ids: number[]): Promise<apiResultTyp
  * @param year 
  * @returns 
  */
-export async function handleGetAllTime(year: number): Promise<apiResultType<timeDbType[]>>
+export async function handleGetAllTime(year: number): Promise<apiResultType<getTimeDateType[]>>
 {
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/time?year=${year}`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/time?year_id=${year}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -277,7 +304,7 @@ export async function handleGetAllTime(year: number): Promise<apiResultType<time
 export async function handleSaveTime(yearAndMonth: timeSaveDbType): Promise<apiResultType<timeDbType[]>>
 {
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/time`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/time`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -314,12 +341,12 @@ export async function handleDeleteTime(time_ids: number[]): Promise<apiResultTyp
 {
 
     try {
-        const apiRes = await fetch("http://localhost:3000/home/api/v1/time", {
+        const apiRes = await fetch("http://localhost:3000/home/api/v2/time", {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(time_ids)
+            body: JSON.stringify({time_ids: time_ids})
         });
 
         if (!apiRes.ok) {
@@ -343,19 +370,46 @@ export async function handleDeleteTime(time_ids: number[]): Promise<apiResultTyp
 
 /**
  * category_tableの全データ取得を要求
- * @param mod   0: 全部取得、1: 部分一取得
- * @param m     月
- * @param y     年
+ * @param time_id
  * @returns 
  */
-export async function handleGetAllCategory(
-    mod: number = 0,
-    y: number = 0,
-    m: number = 0
-): Promise<apiResultType<categoryTableGetAllType[]>>
+export async function handleGetAllCategory(time_id: number): Promise<apiResultType<categoryTableType[]>>
 {       
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/category?mode=${mod}&year=${y}&month=${m}`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/category?time_id=${time_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        if (!apiRes.ok) {
+            throw new Error(`HTTP error ${apiRes.status}`);
+        }
+        return  apiRes.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            return {
+                success: false,
+                mess: error.message
+            }
+        }
+
+        return{
+            success: false,
+            mess: ""
+        }
+    }
+}
+
+/**
+ * 年ごとのカテゴリリスト取得を要求
+ * @returns 
+ */
+export async function handleGetListCategoryByYearForTable(): Promise<apiResultType<categoryListByYear[]>>
+{
+    try {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/category-by-year`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -389,7 +443,7 @@ export async function handleGetAllCategory(
 export async function handleSaveCategory(data: object): Promise<apiResultType<categoryTableSaveType>>
 {   
     try {
-        const apiRes = await fetch("http://localhost:3000/home/api/v1/category", {
+        const apiRes = await fetch("http://localhost:3000/home/api/v2/category", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -418,25 +472,61 @@ export async function handleSaveCategory(data: object): Promise<apiResultType<ca
 }
 
 /**
+ * 年ごとのカテゴリリスト取得を要求
+ * @returns 
+ */
+export async function handleSaveCategoryByYearForTable(data: any[], time_id: number): Promise<apiResultType<categoryListByYear[]>>
+{
+    try {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/category-by-year`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                caData: data,
+                time_id: time_id
+            })
+        })
+
+        if (!apiRes.ok) {
+            throw new Error(`HTTP error ${apiRes.status}`);
+        }
+        return  apiRes.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            return {
+                success: false,
+                mess: error.message
+            }
+        }
+
+        return{
+            success: false,
+            mess: ""
+        }
+    }
+}
+
+/**
  * category_table更新を要求
  * @param id category_id
  * @param name category_name
  * @returns 
  */
-export async function handleUpdateCategory(id: number, name: string): Promise<apiResultType<categoryTableUpdateType>>
+export async function handleUpdateCategory(id: number, name: string, type: number): Promise<apiResultType<categoryTableUpdateType>>
 {   
-    const makeJsonData = {
-        category_id: id,
-        category_name: name
-    };
-
     try {
-        const apiRes = await fetch("http://localhost:3000/home/api/v1/category", {
+        const apiRes = await fetch("http://localhost:3000/home/api/v2/category", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(makeJsonData)
+            body: JSON.stringify({
+                category_id: id,
+                category_name: name,
+                category_type: type
+            })
         })
 
         if (!apiRes.ok) {
@@ -467,12 +557,14 @@ export async function handleUpdateCategory(id: number, name: string): Promise<ap
 export async function handleDeleteCategory(category_id: string[]): Promise<apiResultType<categoryTableUpdateType>>
 {   
     try {
-        const apiRes = await fetch("http://localhost:3000/home/api/v1/category", {
+        const apiRes = await fetch("http://localhost:3000/home/api/v2/category", {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(category_id)
+            body: JSON.stringify({
+                category_ids: category_id
+            })
         })
 
         if (!apiRes.ok) {
@@ -498,10 +590,10 @@ export async function handleDeleteCategory(category_id: string[]): Promise<apiRe
  * expense_table保存を要求
  * @param data [day]
  */
-export async function handleSaveExpense(data: string[]): Promise<apiResultType<expenseTableSaveType>>
+export async function handleSaveExpense(data?: object): Promise<apiResultType<expenseTableSaveType>>
 {
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/expense`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/expense`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -533,10 +625,10 @@ export async function handleSaveExpense(data: string[]): Promise<apiResultType<e
  * expense tableデータの一覧取得を要求
  * @param time_id 
  */
-export async function handleGetAllExpense(time_id: string): Promise<apiResultType<expenseTableGetAllType[]>>
+export async function handleGetAllExpense(time_id: number): Promise<apiResultType<expenseTableGetAllType[]>>
 {
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/expense?time_id=${time_id}`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/expense?time_id=${time_id}`, {
             method: "GET",
             headers: {
                 "Content-type": "application/json"
@@ -571,7 +663,7 @@ export async function handleGetAllExpense(time_id: string): Promise<apiResultTyp
 export async function handleUpdateExpense(data: expenseTableGetAllType): Promise<apiResultType<expenseTableUpdateType>>
 {
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/expense`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/expense`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json"
@@ -603,15 +695,17 @@ export async function handleUpdateExpense(data: expenseTableGetAllType): Promise
  * expense tableデータ削除を要求
  * @param data expenseid, day, category_id, money, month 
  */
-export async function handleDeleteExpense(expense_id: number[]): Promise<apiResultType<expenseTableUpdateType>>
+export async function handleDeleteExpense(expense_ids: number[]): Promise<apiResultType<expenseTableUpdateType>>
 {
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v1/expense`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/expense`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(expense_id)
+            body: JSON.stringify({
+                expense_ids: expense_ids
+            })
         });
 
         if (!apiRes.ok) {

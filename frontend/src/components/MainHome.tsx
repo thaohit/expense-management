@@ -72,10 +72,8 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
     const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
     const [isUpdateData, setIsUpdateData] = useState<boolean>(true);            // DBのデータ更新状態
 
-    const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);
-    
+    // const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);
     const [expenseData, setExpenseData] = useState<expenseDataType[]>([]);      // expense data
-
     const [checkBox, setCheckBox] = useState<string[]>([]);                     // Table componentからチェックバックスで選択された値
 
     // inputdata側で入力成功の場合、expense table更新
@@ -83,49 +81,59 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
         setIsUpdateData(!isUpdateData);
     }
     // Tableから選択された値を取得
-    const handleGetCheckBox = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value: string = e.target.value;
-        let checkBoxArr = checkBox;
-        let arrNum = checkBoxArr.indexOf(value);
-        if (arrNum === -1) {
-            checkBoxArr.push(value);
-        } else {
-            checkBoxArr.splice(arrNum, 1);
-        }
+    // const handleGetCheckBox = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     let value: string = e.target.value;
+    //     let checkBoxArr = checkBox;
+    //     let arrNum = checkBoxArr.indexOf(value);
+    //     if (arrNum === -1) {
+    //         checkBoxArr.push(value);
+    //     } else {
+    //         checkBoxArr.splice(arrNum, 1);
+    //     }
         
-        setExpenseData(expenseData);
-        setCheckBox(checkBoxArr);
+    //     setExpenseData(expenseData);
+    //     setCheckBox(checkBoxArr);
 
-        console.log(checkBox);
-    }
+    //     console.log(checkBox);
+    // }
 
+    /**
+     * expenses 削除処理
+     * @param ids expenseId
+     */
     const handleDelete = (ids: number[]) => {
         const deleteExpense = handleDeleteExpense(ids);
         deleteExpense.then((res) => {
-            console.log(res);
+            // 削除に成功する場合、expenseデータを更新し、render
             if (res.success) {
                 setIsUpdateData(!isUpdateData);
             }
+            alert(res.mess);
         })
     }
 
+    /**
+     * 更新処理
+     * @param data expense datas
+     */
     const handleUpdate = (data: expenseDataType) => {
 
         const updateData = handleUpdateExpense(data);
         updateData.then((res) => {
-            console.log(res);
+            // 更新に成功する場合、expenseデータを更新し、render
             if (res.success) {
                 setIsUpdateData(!isUpdateData);
             }
+            alert(res.mess);
         });
     }
 
-    // categoryが更新される場合
+    // categoryが更新される場合、データを再取得し、render
     useEffect(() => {
         let ignore = false; // Clear up
 
         if (ignore === false) {
-            const getCategory = handleGetAllCategory(1, time.year, time.month);
+            const getCategory = handleGetAllCategory(time.time_id);
             getCategory.then((res) => {
                 console.log("category", res, year, month);
             })
@@ -141,15 +149,14 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
     // Expenseデータ一覧を取得し、反映する
     useEffect(() => {
 
-        const getAllExpense = handleGetAllExpense(time.time_id.toString());
+        const getAllExpense = handleGetAllExpense(time.time_id);
         getAllExpense.then((res) => {
-            console.log(res);
             if (res.success && res.data) {
-                console.log("rerender");
                 setExpenseData([...res.data]);
             } else {
-                setExpenseData([]);
+                // setExpenseData([]);
             }
+            console.log(res.mess);
         });
 
         // 初期化
@@ -189,6 +196,7 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
                     body={expenseData}
                     year={year}
                     month={month}
+                    time={time}
                     isUpdate={isUpdateData}
                     isClickMonth={isClickMonth}
                     isCategoryUpdate={isCategoryUpdata}
