@@ -36,3 +36,7 @@ Users can easily record, view, and manage their spending with a simple and intui
 
 ## How to Run
 1. Clone the repository
+2. Install dependencies
+3. Run the application
+## Author
+- GitHub: https://github.com/thaohit
