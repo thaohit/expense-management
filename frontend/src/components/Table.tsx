@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import '../css/table.css';
-import { handleDeleteExpense } from '../services/api';
 
 
 

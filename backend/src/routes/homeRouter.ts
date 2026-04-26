@@ -34,4 +34,8 @@ homeRouter.post("/api/v2/expense", homeController.saveExpensev2);
 homeRouter.put("/api/v2/expense", homeController.updateExpensev2);
 homeRouter.delete("/api/v2/expense", homeController.deleteExpensev2);
 
+// Statistics
+homeRouter.get("/api/v1/statistics", homeController.getStatisticsViewv1);
+homeRouter.get("/api/v1/statistics-in-out", homeController.getStatisticsInOutViewv1);
+
 

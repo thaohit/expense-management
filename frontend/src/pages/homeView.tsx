@@ -15,19 +15,13 @@ import Dropdown from '../components/Dropdown';
 import BtnIcon from '../components/BtnIcon';
 import HomeMain from '../components/MainHome';
 import CategoryAddArea from '../components/CategoryAddArea';
-
-
+import Graph from '../components/Graph';
+import Statistics from '../components/Statistics';
 
 // api
 import { handleGetAllYear, handleSaveYear, handleDeleteYear } from '../services/api';
 
-type TableBody = {
-    day: string;
-    category: string;
-    money: number;
-    note: string;
-}
-
+// ================ TYPE ================
 type yearDbType = {
     year_id: number;
     year_name: number;
@@ -37,6 +31,12 @@ type timeType = {
     time_id: number;
     year: number;
     month: number;
+}
+
+type mainComponentType = {
+    time: timeType;
+    isCategoryUpdata: boolean;
+    isClickMonth: boolean;
 }
 
 /** function Home
@@ -53,17 +53,60 @@ function Home() {
     const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
     const [isCategoryAdd, setIsCategoryAdd] = useState<boolean>(false);         // category追加画面を表示するか true or false
     const [updateDataState, setUpdateDataState] = useState<boolean>(true);      // DBとの処理が実行された場合、re-render
-    
-    const [yearForComponent, setYearForComponent] = useState<number>(0);        // componentの年を設定
-    const [monthForComponent, setMonthForComponent] = useState<number>(0);      // componentの月を設定
+    const [isClickMonth, setIsClickMonth] = useState<boolean>(false);           // タイムの選択状態
+    const [isComponent, setIsComponent] = useState<string>("home");
+
     const [timeForComponent, setTimeForComponent] = useState<timeType>({
         time_id: 0,
         year: 0,
         month: 0
     })                                                                          // componentのtimeを設定
-    const [isClickMonth, setIsClickMonth] = useState<boolean>(false);           // タイムの選択状態
 
-    // =========== hanle eara
+    
+    /**
+     * main component 切り替える
+     * @param param0 
+     * @returns 
+     */
+    const MainComponent = ({ time, isCategoryUpdata, isClickMonth}: mainComponentType) => {
+
+        switch (isComponent) {
+            case "home":
+                return <HomeMain
+                            isCategoryUpdata={isCategoryUpdata}
+                            time={time}
+                            isClickMonth={isClickMonth}
+                        /> 
+            case "category":
+                return <CategoryAddArea
+                            time={time}
+                            isClickMonth={isClickMonth}
+                        />
+            case "graph":
+                return <Graph
+                    time={time}
+                />
+            case "statistics":
+                return <Statistics
+                    time={time}
+                />
+        }
+        return 
+    }
+
+    // =========== hanle eara =====================
+
+    const handleChangeMainComponent = (type: string) => {
+
+        let getType: string = type;
+
+        // 2回目押下の場合、homeに遷移
+        if (type === isComponent) {
+            getType = "home";
+        }
+        setIsComponent(getType);
+    }
+
     const changePage = ():void => {
         // navigate("/login", {state: { key: "abc"}}); 
         const data = ["1", "2", "2", "3"];
@@ -150,8 +193,6 @@ function Home() {
      */
     const handleSelectTimeForMainAera = (time_id: number, year: number = 0, month: number = 0) => {
         // Componentのタイムデータをセットする
-        setYearForComponent(year);
-        setMonthForComponent(month);
         setTimeForComponent({
             time_id: time_id,
             year: year,
@@ -199,10 +240,10 @@ function Home() {
                         <div className="dowm">
                             <BtnIcon props={true}>
                                 <span onClick={changePage} title="Logout"><LogoutSharpIcon /></span>
-                                <span><EqualizerIcon /></span>
+                                <span title="Graph" onClick={() => handleChangeMainComponent("graph")}><EqualizerIcon /></span>
                                 <span><AddAlertIcon /></span>
-                                <span><FormatListBulletedAddIcon /></span>
-                                <span title="AddCategory" onClick={() => setIsCategoryAdd(!isCategoryAdd)}><AddchartIcon/></span>
+                                <span title="Statistics" onClick={() => handleChangeMainComponent("statistics")}><FormatListBulletedAddIcon /></span>
+                                <span title="AddCategory" onClick={() => handleChangeMainComponent("category")}><AddchartIcon/></span>
                             </BtnIcon>
                         </div>
                     </div>
@@ -249,21 +290,11 @@ function Home() {
                     <span className={ isOpen ? "icon" : "icon rotate"}><KeyboardDoubleArrowLeftIcon /></span>
                 </div>
                 <div id="main">
-                    {!isCategoryAdd ? 
-                        <HomeMain
-                            isCategoryUpdata={isCategoryAdd}
-                            year={yearForComponent}
-                            month={monthForComponent}
-                            time={timeForComponent}
-                            isClickMonth={isClickMonth}
-                        /> :
-                        <CategoryAddArea
-                            year={yearForComponent}
-                            month={monthForComponent}
-                            time={timeForComponent}
-                            isClickMonth={isClickMonth}
-                        />
-                    }
+                    <MainComponent 
+                        isCategoryUpdata={isCategoryAdd}
+                        time={timeForComponent}
+                        isClickMonth={isClickMonth}
+                    />
                 </div>
             </div>
         </>

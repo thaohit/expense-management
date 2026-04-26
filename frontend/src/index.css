@@ -139,3 +139,14 @@ button {
     font-size: 17px;
 }
 
+.display-not-show {
+    display: none;
+}
+
+.show-detail {
+    height: 30%;
+}
+
+.show-table {
+    height: 70%;
+}

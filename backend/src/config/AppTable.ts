@@ -6,10 +6,16 @@ const db = new Database(dbPath);
 
 type getType = {
     fields?: string[];
-    join?: {joinTable: string, field: {source: string, target: string}[]};
+    join?: {
+        joinTable: string,
+        fieldsJoin?: string[];
+        on: {source: string, target: string}[],
+        joinType: "INNER JOIN" | "LEFT JOIN" | "RIGHT JOIN"
+    }[];
     where?: {fields: string[], values: any[], connection?: "AND" | "OR"};
     whereIn?: {field: string, values: any[]};
     orderBy?: {field: string, direction?: "ASC" | "DESC"};
+    isWriteField?: boolean;
 }
 
 type getAllType = {
@@ -20,9 +26,12 @@ type getAllType = {
         on: {source: string, target: string}[],
         joinType: "INNER JOIN" | "LEFT JOIN" | "RIGHT JOIN"
     }[];
-    where?: {field: string, value: any};
+    where?: {fields: string[], values: any[], connection?: "AND" | "OR"};
     whereIn?: {field: string, values: any[]};
     orderBy?: {field: string, direction?: "ASC" | "DESC"}[];
+    groupBy?: {fields: string[]};
+    run?: boolean;
+    isWriteField?: boolean;
 }
 
 type saveType = {
@@ -59,9 +68,10 @@ export class AppTable {
      * @param where WHERE文
      * @param whereIn WHERE IN文
      * @param orderBy ORDER BY文
+     * @param isWriteField WHERE文を手動で書く
      * @returns 
      */
-    get({fields, join, where, whereIn, orderBy}: getType): hanldeResultType
+    get({fields, join, where, whereIn, orderBy, isWriteField}: getType): hanldeResultType
     {
         if (where && whereIn) {
             return {
@@ -70,12 +80,33 @@ export class AppTable {
             };
         }
 
-        let query = `SELECT ${fields?.join(", ") || "*"} FROM ${this.tableName}`
+        // QUERY
+        let query: string = `SELECT ${fields?.join(", ") || "*"} FROM ${this.tableName} `;
+        let query2 = "";
+        let query3 = "";
         let params: any[] = [];
 
         // JOIN
         if (join) {
-            query += ``
+            if (!isWriteField) {
+                query = `SELECT ${fields?.map((val) => `${this.tableName}.${val}`).join(", ") || ""}`;
+                query2 = join.map((val) => {
+                    if (val.fieldsJoin) {
+                        return `, ${val.fieldsJoin.map((valF) => `${val.joinTable}.${valF}`).join(", ")}`;
+                    }
+                }).join("");
+            } else {
+                query = `SELECT ${fields?.map((val) => val).join(", ") || `SELECT ${this.tableName}.*`}`;
+            }
+
+            query2 += ` FROM ${this.tableName}`;
+            query3 = join.map((val) => {
+                return ` ${val.joinType} ${val.joinTable} ON ${val.on.map((valOn) => `${this.tableName}.${valOn.source} = ${val.joinTable}.${valOn.target}`).join(" ")}`;
+            }).join("");
+            
+            query += query2;
+            query += query3;
+        } else {
         }
 
         // WHERE
@@ -140,9 +171,12 @@ export class AppTable {
      * @param where WHERE文
      * @param whereIn WHERE IN文
      * @param orderBy ORDER BY文
+     * @param groupBy GROUP BY文
+     * @param isWriteField WHERE文を手動で書く
+     * @param run boolean クエリ実行するか？
      * @returns 
      */
-    getAll({fields, join, where, whereIn, orderBy}: getAllType): hanldeResultType
+    getAll({fields, join, where, whereIn, orderBy, groupBy, run = true, isWriteField = false}: getAllType): hanldeResultType
     {
 
         if (where && whereIn) {
@@ -157,12 +191,16 @@ export class AppTable {
         let query3 = "";
         // JOIN
         if (join) {
-            query = `SELECT ${fields?.map((val) => `${this.tableName}.${val}`).join(", ") || ""}`;
-            query2 = join.map((val) => {
-                if (val.fieldsJoin) {
-                    return `, ${val.fieldsJoin.map((valF) => `${val.joinTable}.${valF}`).join(", ")}`;
-                }
-            }).join("");
+            if (!isWriteField) {
+                query = `SELECT ${fields?.map((val) => `${this.tableName}.${val}`).join(", ") || ""}`;
+                query2 = join.map((val) => {
+                    if (val.fieldsJoin) {
+                        return `, ${val.fieldsJoin.map((valF) => `${val.joinTable}.${valF}`).join(", ")}`;
+                    }
+                }).join("");
+            } else {
+                query = `SELECT ${fields?.map((val) => val).join(", ") || `SELECT ${this.tableName}.*`}`;
+            }
 
             query2 += ` FROM ${this.tableName}`;
             query3 = join.map((val) => {
@@ -219,43 +257,77 @@ export class AppTable {
 
         // WHERE
         if (where) {
-            if (join && fields) {
-                query += ` WHERE ${this.tableName}.${where.field} = ?`;
-            } else {
-                query += ` WHERE ${where.field} = ?`;
+            // if (join && fields) {
+            //     query += ` WHERE ${this.tableName}.${where.field} = ?`;
+            // } else {
+            //     query += ` WHERE ${where.field} = ?`;
+            // }
+            // params.push(where.value);
+            if (where.connection && where.fields.length <= 1) {
+                return {
+                    success: false,
+                    mess: "Cannot use connection if where's field is less then 1"
+                }
+            } else if (!where.connection && where.fields.length > 1) {
+                return {
+                    success: false,
+                    mess: "Cannot use connection if while field is less then 1"
+                }
+            } 
+            let condition = ` WHERE ${where.fields?.map((val) => `${val} = ?`)}`;
+            if (where.connection) {
+                condition = ` WHERE ${where.fields?.map((val) => `${val} = ? `).join(`${where.connection} `)}`;
             }
-            params.push(where.value);
+            params = where.values;
+            query += condition; 
         }
         // WHERE IN
         else if (whereIn) {
-
+            query += ` WHERE ${whereIn.field} IN (${whereIn.values.map((val) => val).join(", ")})`
         }
         // ORDER BY
+        // GROUP BY
+        if (groupBy) {
+            query += ` GROUP BY ${groupBy.fields.map((val) => val).join(", ")}`;
+        }
+
         if (orderBy) {
             // query += ` ORDER BY ${orderBy.field} ${orderBy.direction || "ASC"}`;
             query += ` ORDER BY ${orderBy.map((val) => `${val.field} ${val.direction || "ASC"}`).join(", ")}`;
         }
-        // SQL実行
-        try {
-            const result = db.prepare(query).all(params);
-            return {
-                success: true,
-                data: result,
-                mess: "GET DATA OK"
-            };     
-        } catch (error) {
-            if (error instanceof Error) {
+
+
+        if (run === true) {
+            // SQL実行
+            try {
+                const result = db.prepare(query).all(params);
+                return {
+                    success: true,
+                    data: result,
+                    mess: "GET DATA OK"
+                };     
+            } catch (error) {
+                if (error instanceof Error) {
+                    return {
+                        success: false,
+                        mess: error.message
+                    };
+                }
+    
                 return {
                     success: false,
-                    mess: error.message
-                };
-            }
-
+                    mess: "Unknow Error"
+                }
+            } 
+        } else {
+            console.log(query);
             return {
-                success: false,
-                mess: "Unknow Error"
+                success: true,
+                data: query,
+                mess: "GET QUERY"
             }
-        } 
+        }
+
     }
 
     /**

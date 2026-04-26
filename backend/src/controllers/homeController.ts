@@ -1,23 +1,12 @@
 import { Request, Response } from "express";
 
-
-import * as homeModel from "../models/homeModel";
-import * as yearTable from "../config/yearTable";
-import * as timeTable from "../config/timeTable";
-import * as categoryTable from "../config/categoryTable";
-import * as expenseTable from "../config/expenseTable";
-
-import { checkNumber } from "../common/common";
-
 import * as yearsModel from "../models/YearsModel";
 import * as categoriesModel from "../models/CategoriesModel";
 import * as timesModel from "../models/TimesModel";
 import * as expensesModel from "../models/ExpensesModel";
 
-type dataType<T> = {
-    time: T;
-}
 
+// ====== TYPE ================================
 type apiResultType<T> = {
     success: boolean;
     data?: T;
@@ -34,71 +23,11 @@ type addYearQuery = {
     year_id: string;
 }
 
-type getYearQuery = {
-    year: string
-}
-
 // ==========TIME==========
-type timeTableType = {
-    year?: number;
-    time_id?: number;
-    month?: number;
-}
 
 // ==========CATEGORY==========
-type getCategoryType = {
-    mode: string,
-    month: string,
-    year: string
-}
-
-type saveCategoryType = {
-    name: string,
-    year: number,
-    month: number
-}
-
-type updateCategoryType = {
-    category_id: string,
-    category_name: string
-}
-
-type deleteCategoryType = {
-    category_id: string[];
-    time_id: number
-}
-
-type categoryTableType = {
-    category_id?: number,
-    category_name?: string,
-    year?: number,
-    month?: number,
-}
 
 // ==========EXPENSE==========
-type getExpenseQuery = {
-    time_id: string;
-}
-
-type getAllType = {
-    expense_id: number;
-    day: number;
-    money: number;
-    note: string;
-    time_id: number;
-    category_id: number;
-    category_name: string;
-}
-
-type requestExpenseDataType = {
-    expense_id: string;
-    day: string;
-    money: string;
-    note: string;
-    time_id: string;
-    category_id: string;
-    category_name: string;
-}
 
 /**
  * version: v2. timeのデータ一覧取得
@@ -339,7 +268,7 @@ export function viewCategoryv2(req: Request, res: Response): void
     const reqQuery = req.query;
 
     if (categoriesModel.checkQueryForView(reqQuery)) {
-        const getData = categoriesModel.viewC(reqQuery.time_id);
+        const getData = categoriesModel.viewC(reqQuery);
         if (getData.success) {
             console.log("GET CATEGORY OK");
         } else{
@@ -414,37 +343,38 @@ export function saveCategoryv2(req: Request, res: Response): void
 export function saveCategoryByYearv1(req: Request, res: Response): void
 {
     // 変数宣言
-    const reqData: {caData: any[], time_id: number} = req.body;
+    const reqData: {caData: any[], old_time_id: number} = req.body;
     let result: boolean[] = [];
     let messenger: string = "";
-    console.log(reqData);
+
     //リクエストデータ確認
-    if ("caData" in reqData && "time_id" in reqData){
+    if ("caData" in reqData && "old_time_id" in reqData){
         if (reqData.caData instanceof Array) {
-        const checkData = reqData.caData.every((val) => categoriesModel.checkReqDataForSave({...val, time_id: reqData.time_id}) === true);
-        if (checkData === true) {
-            const deleteId = [reqData.caData[0].time_id];
-            // 既存データを削除する
-            const deleteData = categoriesModel.deleteC(deleteId);
-            if (deleteData.success) {
-                reqData.caData.map((val: object) => {
-                    // 新しいデータを保存する
-                    const saveData = categoriesModel.saveC({...val, time_id: reqData.time_id});
-                    if (saveData.success) {
-                        console.log("SAVE CATEGORY BY YEAR OK");
-                    } else {
-                        console.log("SAVE CATEGORY BY YEAR NG");
-                    }
-                    result.push(saveData.success);
-                });
+            const checkData = reqData.caData.every((val) => categoriesModel.checkReqDataForSaveCategoryByYear(val) === true);
+            if (checkData === true) {
+                const deleteId = [reqData.old_time_id];
+                // 既存データを削除する
+                const deleteData = categoriesModel.deleteC(deleteId);
+                if (deleteData.success) {
+                    reqData.caData.map((val: object) => {
+                        // 新しいデータを保存する
+                        const saveData = categoriesModel.saveC({...val, time_id: reqData.old_time_id});
+                        if (saveData.success) {
+                            console.log("SAVE CATEGORY BY YEAR OK");
+                            messenger = "カテゴリーデータ保存に成功しました。";
+                        } else {
+                            messenger = "カテゴリーデータ保存に失敗しました。";
+                            console.log("SAVE CATEGORY BY YEAR NG");
+                        }
+                        result.push(saveData.success);
+                    });
 
-                res.json({
-                    success: result.every((val) => val === true),
-                    mess: messenger
-                });
+                    res.json({
+                        success: result.every((val) => val === true),
+                        mess: messenger
+                    });
+                }
             }
-        }
-
         } else {
             console.log("SAVE CATEGORY NG");
             res.json({
@@ -532,7 +462,7 @@ export function updateCategoryv2(req: Request, res: Response): void
 export function viewExpensev2(req: Request, res: Response): void
 {
     const reqQuery = req.query;
-
+    // クエリ確認
     if (expensesModel.checkReqDataForView(reqQuery)) {
         const getData = expensesModel.viewE(reqQuery.time_id);
         if (getData.success) {
@@ -637,4 +567,63 @@ export function updateExpensev2(req: Request, res: Response): void
             mess: "更新データが存在しない。または更新データが正しくない。"
         })
     } 
+}
+
+/**
+ * version: V1. statistics一覧取得
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function getStatisticsViewv1(req: Request, res: Response): void
+{
+    const reqQuery = req.query;
+
+    // クエリ確認
+    if (expensesModel.checkReqDataForView(reqQuery)) {
+        
+        const getData = expensesModel.statisticsView(reqQuery.time_id);
+        if (getData.success) {
+            console.log("GET STATISTICS OK");
+        } else{
+            console.log("GET STATISTICS NG");
+        }
+        res.json(getData);
+    } else {
+        console.log("GET STATISTICS NG");
+        res.json({
+            success: false,
+            mess: "timeデータが存在しない。またはデータが正しくない"
+        })
+    }
+}
+
+/**
+ * version: V1. 支出・収入の合計取得
+ * * APIから処理要求を処理する
+ * @param req 
+ * @param res 
+ */
+export function getStatisticsInOutViewv1(req: Request, res: Response): void
+{
+    const reqQuery = req.query;
+
+    // クエリ確認
+    if (expensesModel.checkReqDataForView(reqQuery)) {
+        
+        const getData = expensesModel.statisticsInOutView(reqQuery.time_id);
+        if (getData.success) {
+            console.log("GET STATISTICS IN OUT OK");
+        } else{
+            console.log("GET STATISTICS IN OUT NG");
+        }
+        console.log(getData);
+        res.json(getData);
+    } else {
+        console.log("GET STATISTICS IN OUT NG");
+        res.json({
+            success: false,
+            mess: "timeデータが存在しない。またはデータが正しくない"
+        })
+    }
 }

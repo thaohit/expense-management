@@ -3,8 +3,6 @@ APIについての処理
 
 */
 
-
-
 type apiResultType<T> = {
     success: boolean;
     data?: T;
@@ -34,11 +32,6 @@ type timeSaveDbType = {
     month: number;
 }
 // ==========CATEGORY==========
-type categoryTableGetAllType = {
-    category_id: number;
-    category_name: string;
-}
-
 type categoryTableSaveType = {
     id: bigint | number;
 }
@@ -51,7 +44,9 @@ type categoryTableType = {
     category_id: number;
     category_name: string;
     category_type: number;
-    time_id: number;
+    display: number;
+    priority: number;
+    note: string;
 }
 
 // 年ごとのカテゴリーリストタイプ
@@ -84,6 +79,11 @@ type expenseTableUpdateType = {
     change_num: number;
 }
 
+// 支出・収入データタイプ
+type getInOutStatistics = {
+    sumInCome: number;
+    sumPay: number;
+}
 /** 
  * データをバックエンドへPOSTし、確認
  * @param params ユーザーIDとPWを含めるオブジェクト { userName, pw}
@@ -370,13 +370,13 @@ export async function handleDeleteTime(time_ids: number[]): Promise<apiResultTyp
 
 /**
  * category_tableの全データ取得を要求
- * @param time_id
+ * @param show_all
  * @returns 
  */
-export async function handleGetAllCategory(time_id: number): Promise<apiResultType<categoryTableType[]>>
+export async function handleGetAllCategory(show_all = 0): Promise<apiResultType<categoryTableType[]>>
 {       
     try {
-        const apiRes = await fetch(`http://localhost:3000/home/api/v2/category?time_id=${time_id}`, {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v2/category?show_all=${show_all}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -485,7 +485,7 @@ export async function handleSaveCategoryByYearForTable(data: any[], time_id: num
             },
             body: JSON.stringify({
                 caData: data,
-                time_id: time_id
+                old_time_id: time_id
             })
         })
 
@@ -514,7 +514,7 @@ export async function handleSaveCategoryByYearForTable(data: any[], time_id: num
  * @param name category_name
  * @returns 
  */
-export async function handleUpdateCategory(id: number, name: string, type: number): Promise<apiResultType<categoryTableUpdateType>>
+export async function handleUpdateCategory(data: object): Promise<apiResultType<categoryTableUpdateType>>
 {   
     try {
         const apiRes = await fetch("http://localhost:3000/home/api/v2/category", {
@@ -522,11 +522,7 @@ export async function handleUpdateCategory(id: number, name: string, type: numbe
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                category_id: id,
-                category_name: name,
-                category_type: type
-            })
+            body: JSON.stringify(data)
         })
 
         if (!apiRes.ok) {
@@ -719,6 +715,78 @@ export async function handleDeleteExpense(expense_ids: number[]): Promise<apiRes
                 success: false,
                 mess: error.message
             };
+        }
+
+        return {
+            success: false,
+            mess: "Unknow Error"
+        }
+    }
+}
+
+/**
+ * 支出・収入一覧取得
+ * @param time_id 
+ * @returns 
+ */
+export async function handleGetStatistics(time_id: number): Promise<apiResultType<string[][]>>
+{
+
+    try {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v1/statistics?time_id=${time_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        if (!apiRes.ok) {
+            throw new Error(`HTTP error ${apiRes.status}`);
+        }
+
+        return apiRes.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            return {
+                success: false,
+                mess: error.message
+            }
+        }
+
+        return {
+            success: false,
+            mess: "Unknow Error"
+        }
+    }
+}
+
+/**
+ * 支出・収入の合計取得
+ * @param time_id 
+ * @returns 
+ */
+export async function handleGetStatisticsInOut(time_id: number): Promise<apiResultType<getInOutStatistics>>
+{
+
+    try {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v1/statistics-in-out?time_id=${time_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        if (!apiRes.ok) {
+            throw new Error(`HTTP error ${apiRes.status}`);
+        }
+
+        return apiRes.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            return {
+                success: false,
+                mess: error.message
+            }
         }
 
         return {

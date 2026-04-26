@@ -18,6 +18,9 @@ db.exec(`
         category_id INTEGER PRIMARY KEY,
         category_name VARCHAR(50) NOT NULL,
         category_type INTEGER NOT NULL,
+        display INTEGER NOT NULL,
+        priority INTEGER NOT NULL,
+        note TEXT,
         time_id INTEGER NOT NULL
     )
 `);

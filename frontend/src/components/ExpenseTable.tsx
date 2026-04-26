@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
-import '../css/expensetable.css';
-import { handleUpdateExpense, handleGetAllCategory } from '../services/api';
+/**
+ * 支出・収入一覧表示
+ * 
+ */
 
+import { useEffect, useState } from 'react';
+
+import '../css/expensetable.css';
+// api
+import { handleGetAllCategory } from '../services/api';
+
+// component
 import InputAndP from '../components/InputAndP';
 import CategorySelectList from './CategorySelectList';
 
 
-
-
-/**
- * 
- */
+// =====type=====
 type ExpenseTableBody = {
     expense_id: number;
     day: number;
@@ -34,21 +38,8 @@ type timeType = {
     month: number;
 }
 
-type TableProps = {
-    title: string[];
-    body: ExpenseTableBody[];
-    year: number;
-    month: number;
-    isUpdate: boolean;
-    isClickMonth: boolean;
-    handleDelete: (ids: number[]) => void;
-    handleUpdate: (data: any) => void;
-};
-
 type ExpenseTableProps = {
     body: ExpenseTableBody[];
-    year: number;
-    month: number;
     time: timeType;
     isUpdate: boolean;
     isClickMonth: boolean;
@@ -62,17 +53,18 @@ type categoryDataType = {
     category_name: string;
 };
 /**
- * 
- * @param title 
- * @param body expense table data
- * @param year 年
- * @param month 月
+ * 支出・収入一覧表示
+ * @param body  
+ * @param time
+ * @param isClickMonth
+ * @param isUpdate
+ * @param isCategoryUpdate
+ * @function handleDelete
+ * @function handleUpdate
  * @returns 
  */
 function ExpenseTable({
     body,
-    year,
-    month,
     time,
     isClickMonth,
     isUpdate,
@@ -80,20 +72,18 @@ function ExpenseTable({
     handleDelete,
     handleUpdate
 }: ExpenseTableProps){
-    const [expenseId, setExpenseID] = useState<number>(0);
-    const [categoryId, setCategoryId] = useState<number>(0);
-    const [day, setDay] = useState<string>("");
-    const [category, setCategory] = useState<string>("");
-    const [money, setMoney] = useState<string>("");
-    const [note, setNote] = useState<string>("");
-    
-    const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);               // category_tableのデータを設定
+    const [expenseId, setExpenseID] = useState<number>(0);          // expense_id
+    const [categoryId, setCategoryId] = useState<number>(0);        // categori_id
+    const [day, setDay] = useState<string>("");                     // day
+    // const [category, setCategory] = useState<string>("");            
+    const [money, setMoney] = useState<string>("");                 // money
+    const [note, setNote] = useState<string>("");                   // note
+    const [categoryData, setCategoryData] = useState<categoryDataType[]>([]); // category_tableのデータを設定
     const [checkBox, setCheckBox] = useState<number[]>([]);         // Table componentからチェックバックスで選択された値
     
-    const [arrId, setArrId] = useState<number>(-1);
+    const [arrId, setArrId] = useState<number>(-1);                 // expense_dataの配列要素番号
     const [isEdit, setIsEdit] = useState<boolean>(false);           // 更新モード
-    const [editId, setEditId] = useState<number>(0);
-    const [isCheckAll, setIsCheckAll] = useState<boolean>(false);
+    const [isCheckAll, setIsCheckAll] = useState<boolean>(false);   // チェックボックスの選択状態
 
     const handleInitial = () => {
         // 更新モードを停止
@@ -103,7 +93,6 @@ function ExpenseTable({
         setExpenseID(0);
         setCategoryId(0);
         setDay("");
-        setCategory("");
         setMoney("");
         setNote("");
         setIsCheckAll(false);
@@ -202,7 +191,6 @@ function ExpenseTable({
         if (category_id) {
             setCategoryId(category_id);
         }
-        // setCategory(body[array_id].category_name);
         setMoney(body[array_id].money.toString());
         setNote(body[array_id].note);
 
@@ -214,8 +202,6 @@ function ExpenseTable({
      */
     const handleChooseCategory = (e: React.ChangeEvent<HTMLSelectElement>) => {
         let value = e.target.value;
-
-        setCategory(value.toString());
         setCategoryId(parseInt(value));
     }
 
@@ -228,8 +214,8 @@ function ExpenseTable({
         handleInitial();
     }, [isUpdate, isClickMonth]);
 
+    // データ保存される場合かつ別の月が選択される場合、カテゴリーデータ一覧を再取得する
     useEffect(() => {
-        
         const getCategory = handleGetAllCategory(time.time_id);
         getCategory.then((res) => {
             if (res.success && res.data && res.data.length > 0) {
@@ -243,15 +229,15 @@ function ExpenseTable({
         // 初期化
         handleInitial();
     }, [isClickMonth, isCategoryUpdate]);
-    console.log(body);
+
+
     return <>
-        <div className="create-table">
-            <h4>
-                {year === 0 ? "" : year}年{month === 0 ? "" : month}月の収入・支出リスト一覧
-            </h4> 
-            <button type="button" className="" onClick={() => handleDelete(checkBox)}>Delete</button>
+        <div className="create-table dis-contents">
+            <div className="show-detail show-btn">
+                <button type="button" className="" onClick={() => handleDelete(checkBox)}>Delete</button>
+            </div>
             
-            <div className="expense-table">
+            <div className="expense-table show-table mr-top-20">
                 <div className="table-header">
                     <ul className="table-title">
                         <li><input type="checkbox" onChange={handleGetAllCheckBox} checked={isCheckAll}/></li>
@@ -273,12 +259,6 @@ function ExpenseTable({
                             />
                         </li>
                         <li>
-                            {/* <InputAndP
-                                id={index}
-                                value={arrId === index ? category : val.category_name}
-                                handleSet={(e) => setCategory(e.target.value)}
-                                isChange={isEdit && index === arrId}
-                            /> */}
                             {
                                 isEdit && index === arrId ? 
                                     <CategorySelectList datas={categoryData} defaultDataId={val.category_id} handleChoose={handleChooseCategory}/>

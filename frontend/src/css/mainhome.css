@@ -1,0 +1,12 @@
+.main-body-table {
+    display: flex;
+}
+
+.main-body-expense-table {
+    width: 100%;
+}
+
+.main-body-statics-table {
+    /* width: 30%; */
+    margin-left: 10px;
+}

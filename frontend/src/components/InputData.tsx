@@ -1,18 +1,19 @@
+/**
+ * 支出・収入のデータ入力エリア
+ */
 
-import '../css/inputdata.css';
 import { useEffect, useState } from 'react';
+import '../css/inputdata.css';
 
 import ArrowCircleRightIcon from '@mui/icons-material/ArrowCircleRight';
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
 
-import BtnIcon from './BtnIcon';
-import Table from '../components/Table';
+// Component
 import CategoryTable from './CategoryTable';
 
 // api
 import { handleGetAllCategory, handleSaveExpense } from '../services/api';
-
 
 
 // ==========type==========
@@ -20,12 +21,10 @@ type categoryDataType = {
     category_id: number;
     category_name: string;
     category_type: number;
+    display: number;
+    priority: number;
+    note: string;
 };
-
-type InputDataType = {
-    title: string[];
-    data: string[];
-}
 
 type timeType = {
     time_id: number;
@@ -46,9 +45,7 @@ type inputDataProps = {
     sideBarIsOpen: boolean;             // sideBar開閉状態
     isCategoryUpdate?: boolean;         // category table更新状態
     isClickMonth: boolean;              // time選択状態
-    year: number;                       // 年
-    month: number;                      // 月
-    time: timeType;
+    time: timeType;                     // timeテーブルデータ
     getIsUpdateData: () => void;        // expenseデータ更新状態を取得
 }
 
@@ -57,18 +54,14 @@ type inputDataProps = {
  * @param sideBarIsOpen sideBar開閉状態
  * @param isCategoryUpdate category table更新状態
  * @param isClickMonth time選択状態
- * @param year 年
- * @param month 月
  * @param time id year month
- * @param getIsUpdateData expenseデータ更新状態を取得
+ * @function getIsUpdateData expenseデータ更新状態を取得
  * @returns 
  */
 function InputData({
     sideBarIsOpen = true,
     isCategoryUpdate,
     isClickMonth,
-    year,
-    month,
     time,
     getIsUpdateData
 }: inputDataProps) 
@@ -89,10 +82,8 @@ function InputData({
             "Enter to next input!"
         ]
     );
-    const [inputTitle, setInputTitle] = useState<string[]>(["Ngày", "Mục", "Số tiền", "Ghi chú", ""]);
+    const [inputTitle, setInputTitle] = useState<string[]>(["Day", "Category", "Money", "Memo", ""]);
     const [inputDataArray, setInputDataArray] = useState<string[]>(["", "", "", ""]);
-    const [keyForSave, setKeyForSave] = useState<string[]>(["day", "category_id", "money", "note"]);
-
     const [countInput, setCountInput] = useState<number>(0);                                // 入力番目
     const [inputData, setInputData] = useState<string>("");                                 // データ入力
     const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);               // category_tableのデータを設定
@@ -194,7 +185,7 @@ function InputData({
         // enter keyを押下する時、入力データを取得
         if (event.key === 'Enter') {
             // 入力するタイムを選択しない場合、入力させない
-            if (year === 0 && month === 0) {
+            if (time.year === 0 && time.month === 0) {
                 alert("Select your time you want to input!!")
                 setInputData("");
                 return;
@@ -258,7 +249,7 @@ function InputData({
     
     useEffect(() => {
         
-        const getCategory = handleGetAllCategory(time.time_id);
+        const getCategory = handleGetAllCategory();
         getCategory.then((res) => {
             if (res.success && res.data && res.data.length > 0) {
                 setCategoryData(res.data);
@@ -274,29 +265,23 @@ function InputData({
     return <>
         <div className={`input-data-body${isOpen ? "" : " body-close"}`}>
             <div className="input-data-show border-1p">
-                <span className="input-data-show-box">Mục đã nhập </span>
+                <span className="input-data-show-box" style={{fontWeight: "bold", fontSize: "20px"}}>List input</span>
                 <div className="input-data-show-day input-data-show-box">
-                    <span className={`day-box ${day !== "" ? "font-bold" : ""}`}>Ngày </span>
+                    <span className={`day-box ${day !== "" ? "font-bold" : ""}`}>Day: </span>
                     <span>{day}</span>
                 </div>
                 <div className="input-data-show-category input-data-show-box">
-                    <span className={category !== "" ? "category-box font-bold": "category-box"}>Mục </span>
+                    <span className={category !== "" ? "category-box font-bold": "category-box"}>Category: </span>
                     <span>{category}</span>
                 </div>
                 <div className="input-data-show-money input-data-show-box">
-                    <span className={money !== "" ? "money-box font-bold": "money-box"}>Số tiền </span>
+                    <span className={money !== "" ? "money-box font-bold": "money-box"}>Money: </span>
                     <span>{money}</span>
                 </div>
                 <div className="input-data-show-note input-data-show-box">
-                    <span className={note !== "" ? "note-box font-bold": "note-box"}>Ghi chú </span>
+                    <span className={note !== "" ? "note-box font-bold": "note-box"}>Note: </span>
                     <span>{note}</span>
                 </div>
-                {/* {inputTitle.map((val, index) => (
-                    <div className="input-data-show-box" key={index}>
-                        <span className={note !== "" ? "note-box font-bold": "note-box"}>{val} </span>
-                        <span>{inputDataArray[index]}</span>
-                    </div>
-                ))} */}
             </div>
             <div className="input-data-handle border-1p">
                 <div className="input-data-handle-category">
@@ -319,6 +304,7 @@ function InputData({
                             <CategoryTable 
                                 body={categoryData}
                                 choosedTarget={inputData}
+                                isShowDetail={false}
                             /> : 
                             []
                     }

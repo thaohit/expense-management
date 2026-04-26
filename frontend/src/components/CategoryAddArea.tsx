@@ -1,11 +1,11 @@
-import { useEffect, useState, type OptionHTMLAttributes, type SelectHTMLAttributes } from 'react';
+import { use, useEffect, useState } from 'react';
+
 
 import '../css/categoryaddarea.css'
 
-// 
+// component
 import CategoryTable from './CategoryTable';
-import BtnIcon from './BtnIcon';
-
+import InputAndP from './InputAndP';
 
 // api
 import {
@@ -27,11 +27,12 @@ type selectCategoryFromTableType = {
     category_id: number;
     category_name: string;
     category_type: number;
+    display: number;
+    priority: number;
+    note: string;
 }
 
 type categoryAddAreaProps = {
-    year: number;
-    month: number;
     time: timeType;
     isClickMonth: boolean;
 }
@@ -49,29 +50,41 @@ type categoryListByYear = {
 }
 /**
  * 
- * @param year 年
- * @param month 月
+ * @param time timesデータ
  * @param isClickMonth  タイムの選択状態 
  * @returns 
  */
-function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaProps): React.ReactNode
+function CategoryAddArea({ time, isClickMonth }: categoryAddAreaProps): React.ReactNode
 {   
-
+    const [input, setInput] = useState<string>("");                                      // 入力
+    const [countInput, setCountInput] = useState<number>(0);                            // 入力計算
     const [id, setId] = useState<number>(0);
     const [name, setName] = useState<string>("");                                        // category入力値
     const [categoryType, setCategoryType] = useState<number>(0);                         // 0: 支出, 1: 収入
+    const [isDisplay, setIsDisplay] = useState<number>(0);
+    const [priority, setPriority] = useState<number>(0);
+    const [note, setNote] = useState<string>("");
+
     const [categoryData, setCategoryData] = useState<selectCategoryFromTableType[]>([]); // category_tableのデータを設定
     const [categoryDataAfterSelect, setCategoryDataAfterSelect] = useState<selectCategoryFromTableType[]>([]);             // カテゴリーリストを選択した後のデータ
     const [checkboxList, setCheckboxList] = useState<string[]>([]);                         //  categories選択リスト
     const [categoryListByYear, setCategoryListByYear] = useState<categoryListByYear[]>([]);
-    
+
     const [isEdit, setIsEdit] = useState<boolean>(false);               // 編集モード 0: 編集しない 1:編集する
     const [isSave, setIsSave] = useState<boolean>(true);                // データ保存状態
     const [isInput, setIsInput] = useState<boolean>(true);              // 入力状態
     const [isSelectTime, setIsSelectTime] = useState<boolean>(false);   // タイム選択状態
     const [isError, setIsError] = useState<number>(0);                  // エラー状態 [0, 1, 2, 3, 4]
     const [isSelectListCategory, setIsSelectListCategory] = useState<boolean>(false);
+    const [showDe, setShowDe] = useState<boolean>(false);               // 詳細表示
+    const [dis, setDis] = useState<boolean>(false);                     // displayを問わず全て表示（）
 
+    const [placeholderForInput, setPlaceholderForInput] = useState<string[]>([
+        "Input Category",
+        "Input Priority",
+        "Input Note",
+        "Enter to Save!!"
+    ]); //
     const [errorMessenge, setErrorMessenge] = useState<string[]>([
         "",
         "Select Month before input data",
@@ -93,8 +106,12 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
     const handleInitial = () => {
         setId(0);
         setName("");
+        setIsDisplay(0);
+        setPriority(0);
+        setNote("");
         setIsEdit(false);
         setIsError(0);
+        setCountInput(0);
     }
     /**
      * カテゴリテーブルからの選択を処理する
@@ -103,10 +120,13 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
      * @param id category_id
      * @param name category_name
      */
-    const handleSelectCategoryFromTable = (id: number, name: string, type: number) => {
-        setId(id);
-        setName(name);
-        setCategoryType(type);
+    const handleSelectCategoryFromTable = (data: selectCategoryFromTableType) => {
+        setId(data.category_id);
+        setName(data.category_name);
+        setCategoryType(data.category_type);
+        setIsDisplay(data.display);
+        setPriority(data.priority);
+        setNote(data.note);
         if(isEdit === false) {
             setIsEdit(true);
         }
@@ -123,26 +143,44 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
             return;
         }
         // 入力されない場合、エラー設定
-        if (name === "") {
+        if (input === "" && countInput === 0) {
             setIsError(2)
             return;
         }
 
-        const setObjForSave = {
-            category_name: name,
-            category_type: categoryType,
-            time_id: time.time_id,
+        switch(countInput) {
+            case 0:
+                setName(input);
+                break;
+            case 1:
+                let prio = input !== "" ? parseInt(input) : priority;
+                setPriority(prio);
+                break;
+            case 2:
+                setNote(input);
+                break;
         }
-        console.log(setObjForSave);
-        const saveData = handleSaveCategory(setObjForSave);
-        saveData.then((res) => {
-            if (res.success) {
-                setIsSave(!isSave);
+
+        if (countInput >= 3) {
+            const setObjForSave = {
+                category_name: name,
+                category_type: categoryType,
+                priority: priority,
+                display: isDisplay,
+                note: note
             }
-            console.log(res.mess);
-        })
-        // 処理後、初期化
-        handleInitial();
+            const saveData = handleSaveCategory(setObjForSave);
+            saveData.then((res) => {
+                if (res.success) {
+                    setIsSave(!isSave);
+                }
+                console.log(res.mess);
+            })
+            // 処理後、初期化
+            handleInitial();
+        }
+        setInput("");
+        setCountInput(countInput+1);
     }
 
     /**
@@ -156,12 +194,20 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
             return;
         }
         // 入力されない場合、エラー設定
-        if (name === "") {
-            setIsError(2)
-            return;
-        }
+        // if (name === "") {
+        //     setIsError(2)
+        //     return;
+        // }
 
-        const updateCategory = handleUpdateCategory(id, name, 0);
+        const setObjForSave = {
+            category_id: id,
+            category_name: name,
+            category_type: categoryType,
+            priority: priority,
+            display: isDisplay,
+            note: note
+        }
+        const updateCategory = handleUpdateCategory(setObjForSave);
         updateCategory.then((res) => {
             if (res.success) {
                 setIsSave(!isSave);
@@ -266,13 +312,14 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
         const value = e.target.value;
         categoryListByYear.map((val) => {
             if (val.time_id === parseInt(value)) {
-                setCategoryDataAfterSelect(val.categoryData);
+                // 該当するtimeIdの場合、カテゴリーデータ・time_idをセット
+                // setCategoryDataAfterSelect(val.categoryData);
             }
         })
     }
 
     /**
-     * 選択を保存
+     * 選択したカテゴリーデータを保存
      */
     const handleSaveListCategory = () => {
 
@@ -288,7 +335,6 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
             alert(res.mess);
         });
     }
-
 
     useEffect(() => {
     
@@ -318,15 +364,29 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
             handleInitial();
             setIsSelectTime(true);
             setCategoryDataAfterSelect([]);
+            setIsSelectListCategory(false);
 
             return () => {ignore = true;}
     
     }, [isSave, isClickMonth]);
 
     useEffect(() => {
-        setIsSelectListCategory(false);
-        setCategoryListByYear([]);
-    }, [isClickMonth]);
+        
+        let show = dis ? 1 : 0;
+        // カテゴリ一覧取得
+        const getCategory = handleGetAllCategory(show);
+        getCategory.then((res) => {
+            if (res.success) {
+                if (res.data && res.data.length > 0) {
+                    setCategoryData(res.data);
+                } else {
+                    setCategoryData([]);
+                }
+            } else {
+                console.log(res.mess);
+            }
+        })
+    }, [dis]);
 
     return <>
         <div className="category-add-area">
@@ -338,27 +398,36 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
                     <input
                         type="text"
                         name="input-add-category"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
                         style={!isInput ?
                             {border: "2px solid red"} :
                             {}
                         }
                         onKeyDown={handleEnterKeyDown}
-                        placeholder="Input your category"
+                        placeholder={placeholderForInput[countInput]}
                     />
                     {!isEdit ?
                         <button type="button" onClick={handleSave}>{"Save >>"}</button> :
                         <button type="button" onClick={handleEdit}>{"Edit >>"}</button>
                     }
                     <div className="category-radio">
-                        <span>支出<input type="radio" value={0} name="radio-expense" checked={categoryType === 0} onChange={() => setCategoryType(0)}/></span>
-                        <span>収入<input type="radio" value={1} name="radio-income" checked={categoryType === 1} onChange={() => setCategoryType(1)}/></span>
+                        <span>Pay<input type="radio" value={0} name="radio-pay" checked={categoryType === 0} onChange={() => setCategoryType(0)}/></span>
+                        <span>Income<input type="radio" value={1} name="radio-income" checked={categoryType === 1} onChange={() => setCategoryType(1)}/></span>
+                    </div>
+                    <div className="category-input-detail">
+                        <p>Category: <input type="text" name="category-name" value={name} onChange={(e) => setName(e.target.value)}/></p>
+                        <p>Display: 
+                            <input type="radio" value={0} name="radio-hidden" checked={isDisplay === 0} onChange={() => setIsDisplay(0)}/>  Hidden
+                            <input type="radio" value={1} name="radio-show" checked={isDisplay === 1} onChange={() => setIsDisplay(1)}/> Show
+                        </p>
+                        <p>Priority: <input type="text" name="category-priority" value={priority} onChange={(e) => setPriority(parseInt(e.target.value))}/></p>
+                        <p>Note: <input type="text" name="category-note" value={note} onChange={(e) => setNote(e.target.value)}/></p>
                     </div>
                     <div className="categore-delete-btn">
                         <button type="button" onClick={handleDelete}>Delete Category</button>
                     </div>
-                    <div className="category-select-list-btn">
+                    {/* <div className="category-select-list-btn">
                         <button type="button" onClick={handleSelectListCategoryForTable}>Select List</button>
                         {isSelectListCategory ?
                             <select name="select-list" onChange={handleSelectCategory}>
@@ -375,12 +444,18 @@ function CategoryAddArea({ year, month, time, isClickMonth }: categoryAddAreaPro
                             : null
                         }
                         <button onClick={handleSaveListCategory}>Ok</button>
-                    </div>
+                    </div> */}
                 </div>
                 <div className="category-table">
+                    <div className="show-detail-checkbox">
+                        <p>Show All: <input type="checkbox" checked={dis} onChange={() => setDis(!dis)} /></p>
+                        <p>Show details: <input type="checkbox" checked={showDe} onChange={() => setShowDe(!showDe)}/></p>
+                    </div>
                     <CategoryTable
                         mode={1}
                         body={isSelectListCategory ? categoryDataAfterSelect : categoryData}
+                        isShowDetail={showDe}
+                        isShowAll={dis}
                         handleOnClick={handleSelectCategoryFromTable}
                         handleCheckboxCategory={handleCheckboxCategory}
                     />

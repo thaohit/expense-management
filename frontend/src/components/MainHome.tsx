@@ -4,27 +4,13 @@ import { useEffect, useState } from 'react';
 import '../css/mainhome.css'
 // Component
 import InputData from "./InputData";
-import Table from "./Table";
+import ExpenseTable from './ExpenseTable';
+import StatisticsTable from './StatisticsTable';
+
 
 // api
-import { handleGetAllCategory, handleGetAllExpense, handleDeleteExpense, handleUpdateExpense } from '../services/api';
-import ExpenseTable from './ExpenseTable';
+import { handleGetAllCategory, handleGetAllExpense, handleDeleteExpense, handleUpdateExpense, handleGetStatistics, handleGetStatisticsInOut } from '../services/api';
 
-// type
-type TableBody = {
-    day: string;
-    category: string;
-    money: number;
-    note: string;
-}
-const titles:string[] =  ["Ngày", "Mục", "Số tiền", "Ghi chú"];
-const tableData:TableBody[] = [
-    {day: "1", category:"Eat", money: 2000, note: "khong gi"},
-    {day: "2", category:"Electronic", money: 3000, note: "Tiền điện"},
-    {day: "3", category:"Internet", money: 2400, note: "Tiền internet"},
-    {day: "4", category:"Presents", money: 10000, note: "Quà tặng ny"},
-    {day: "25", category:"House", money: 30000, note: ""}
-];
 
 
 // ==========type==========
@@ -37,18 +23,12 @@ type timeType = {
 type MainHomeProps = {
     props?: boolean;
     isCategoryUpdata?: boolean;         // category_tableのデータ更新状態
-    year: number;                       // 年           
-    month: number;                      // 月
     time: timeType;                     // id, year, month
     isClickMonth: boolean;              // タイムの選択状態
     children?: React.ReactNode;
 }
 
-type categoryDataType = {
-    id: number;
-    name: string;
-}
-
+// expenseテーブルデータタイプ
 type expenseDataType = {
     expense_id: number;
     day: number;
@@ -58,44 +38,35 @@ type expenseDataType = {
     category_name: string;
 }
 
+type sumInOutType = {
+    sumInCome: number;
+    sumPay: number;
+}
+
 /**
  * 
  * @param isCategoryUpdata  category_tableのデータ更新状態 
- * @param year 年
- * @param month 月
  * @param time id, year, month
- * @param isClickMonth      タイムの選択状態
+ * @function isClickMonth      タイムの選択状態
  * @returns 
  */
-function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHomeProps): React.ReactNode
+function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): React.ReactNode
 {
     const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
     const [isUpdateData, setIsUpdateData] = useState<boolean>(true);            // DBのデータ更新状態
+    const [isShowStatistics, setIsShowStatistics] = useState<boolean>(false);   // statistic表示
 
-    // const [categoryData, setCategoryData] = useState<categoryDataType[]>([]);
     const [expenseData, setExpenseData] = useState<expenseDataType[]>([]);      // expense data
     const [checkBox, setCheckBox] = useState<string[]>([]);                     // Table componentからチェックバックスで選択された値
+
+    const [theadForStatistics, setTheadForStatistics] = useState<string[]>(["Category"]);
+    const [statisticsData, setStatisticsData] = useState<string[][]>([]);   // 支出・収入データ一覧
+    const [sumInOut, setSumInOut] = useState<sumInOutType>({sumInCome: 0, sumPay: 0});
 
     // inputdata側で入力成功の場合、expense table更新
     const handleGetIsUpdateState = () => {
         setIsUpdateData(!isUpdateData);
     }
-    // Tableから選択された値を取得
-    // const handleGetCheckBox = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     let value: string = e.target.value;
-    //     let checkBoxArr = checkBox;
-    //     let arrNum = checkBoxArr.indexOf(value);
-    //     if (arrNum === -1) {
-    //         checkBoxArr.push(value);
-    //     } else {
-    //         checkBoxArr.splice(arrNum, 1);
-    //     }
-        
-    //     setExpenseData(expenseData);
-    //     setCheckBox(checkBoxArr);
-
-    //     console.log(checkBox);
-    // }
 
     /**
      * expenses 削除処理
@@ -135,7 +106,7 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
         if (ignore === false) {
             const getCategory = handleGetAllCategory(time.time_id);
             getCategory.then((res) => {
-                console.log("category", res, year, month);
+                console.log(res.mess);
             })
         }
         return () => {ignore = true};
@@ -163,6 +134,28 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
         setCheckBox([]);
     }, [isClickMonth, isUpdateData]);
 
+    useEffect(() => {   
+            // 支出・収入一覧取得
+            // 月のリストを初期化 (1~maxMonth)
+            const getData = handleGetStatistics(time.time_id);
+            getData.then((res) => {
+                if (res.success && res.data) {
+                    setStatisticsData(res.data)
+                } else {
+    
+                }
+            })
+
+            const getInOut = handleGetStatisticsInOut(time.time_id);
+            getInOut.then((res) => {
+                if(res.success && res.data) {
+                    setSumInOut(res.data);
+                    console.log(res.data);
+                }
+            })
+    
+        }, [isShowStatistics, isUpdateData]);
+
     return <>
         
             <div className="main-header">
@@ -175,34 +168,35 @@ function HomeMain({ isCategoryUpdata, year, month, time, isClickMonth }: MainHom
                     sideBarIsOpen={isOpen}
                     isCategoryUpdate={isCategoryUpdata}
                     isClickMonth={isClickMonth}
-                    year={year}
-                    month={month}
                     time={time}
                     getIsUpdateData={handleGetIsUpdateState}
                 />
             </div>
             <div className="main-body border-1p">
-                {/* <Table 
-                    title={titles}
-                    body={expenseData}
-                    year={year}
-                    month={month}
-                    isUpdate={isUpdateData}
-                    isClickMonth={isClickMonth}
-                    handleDelete={handleDelete}
-                    handleUpdate={handleUpdate}
-                /> */}
-                <ExpenseTable
-                    body={expenseData}
-                    year={year}
-                    month={month}
-                    time={time}
-                    isUpdate={isUpdateData}
-                    isClickMonth={isClickMonth}
-                    isCategoryUpdate={isCategoryUpdata}
-                    handleDelete={handleDelete}
-                    handleUpdate={handleUpdate}
-                />
+                <h4>
+                    {time.year === 0 ? "" : time.year}年{time.month === 0 ? "" : time.month}月の収入・支出リスト一覧
+                </h4>
+                <p>Show statistics detail: <input type="checkbox" checked={isShowStatistics} onChange={() => setIsShowStatistics(!isShowStatistics)}/></p>
+                <div className="main-body-table">
+                    <div className="main-body-expense-table">
+                        <ExpenseTable
+                            body={expenseData}
+                            time={time}
+                            isUpdate={isUpdateData}
+                            isClickMonth={isClickMonth}
+                            isCategoryUpdate={isCategoryUpdata}
+                            handleDelete={handleDelete}
+                            handleUpdate={handleUpdate}
+                        />
+                    </div>
+                    <div className={`${isShowStatistics ? "main-body-statics-table" : "main-body-statics-table display-not-show"}`}>
+                        <StatisticsTable
+                            tHead={["Category", time.month.toString()]}
+                            tBody={statisticsData}
+                            sumInOut={sumInOut}
+                        />
+                    </div>
+                </div>
             </div>
     
     </>

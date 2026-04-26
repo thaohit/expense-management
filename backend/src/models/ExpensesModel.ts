@@ -1,5 +1,8 @@
 import { checkNumber } from "../common/common";
+import { CategoriesTable } from "../config/CategoriesTable";
 import { ExpensesTable } from "../config/ExpensesTable";
+import { TimesTable } from "../config/TimesTable";
+import { YearsTable } from "../config/YearsTable";
 
 
 // 処理の戻り値
@@ -33,7 +36,41 @@ type saveType = {
     month: number;
 }
 
+type statisticsDataType = {
+    month: number;
+    sum_mon: number;
+}
+// statistics一覧データタイプ
+type statisticsType = {
+    datas: string[];
+}
+
+type stType = {
+    month: number;
+    sum_mon: number;
+    category_id: number;
+    category_name: string;
+}
+
+// データ一覧タイプ
+type getCategoryDataType = {
+    category_id: number;
+    category_name: string;
+    category_type: number;
+    time_id: number;
+}
+
+//
+type getInOutType = {
+    sumInCome: number;
+    sumPay: number;
+}
+
+// テーブル生成
 const expensesTable = new ExpensesTable;
+const categoriesTable = new CategoriesTable;
+const yearsTable = new YearsTable;
+const timesTable = new TimesTable;
 
 /**
  * リクエストデータチェック
@@ -89,7 +126,7 @@ export function checkReqDataForDelete(data?: any): boolean
         return true;
     } else {
         return false;
-    } 
+    }
 }
 
 /**
@@ -113,6 +150,36 @@ export function checkReqDataForUpdate(data?: any): boolean
     } else {
         return false;
     } 
+}
+
+/**
+ * クエリデータチェック
+ * * data.time_id
+ * @param data 
+ * @returns 
+ */
+export function checkReqDataForGetStatistics(data?: any): boolean
+{
+    if (data && typeof data === "object" && "time_id" in data) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/**
+ * クエリデータチェック
+ * * data.time_id
+ * @param data 
+ * @returns 
+ */
+export function checkReqDataForGetInOutType(data?: any): boolean
+{
+    if (data && typeof data === "object" && "time_id" in data) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /**
@@ -209,11 +276,11 @@ export function viewE(data?: any): hanldeResultType<expensesTableType[]>
                 joinType: "INNER JOIN"
             }],
             where: {
-                field: "time_id",
-                value: parseInt(data)
+                fields: ["expenses.time_id"],
+                values: [parseInt(data)]
             }
         });
-
+        console.log(getData);
         result = getData.success;
         if (result && getData.data) {
             dataDB = getData.data;
@@ -392,4 +459,190 @@ export function updateE(data?: any): hanldeResultType<any>
         data: reqData,
         mess: message,
     }           
+}
+
+/**
+ * リクエストデータを受け取り、データ取得処理を実行
+ * @param data 更新データ
+ * @returns hanldeResultType
+ */
+export function statisticsView(data?: any): hanldeResultType<string[][]>
+{
+    // 変数宣言
+    let result: boolean = true;
+    let message: string = "";
+    let reqData: string[] = data;
+    let statistcsDatas: string[][] = [];
+
+    // データチェック
+    if (reqData && checkNumber(reqData)) {
+        // カテゴリー総金額を取得
+        const getSum = expensesTable.getAll({
+            fields: [
+                "times.month", "SUM(expenses.money) as sum_mon, expenses.category_id, categories.category_name"
+            ],
+            join: [
+                {
+                    joinTable: "times",
+                    on: [{
+                        source: "time_id",
+                        target: "time_id"
+                    }],
+                    joinType: "INNER JOIN"
+                },
+                {
+                    joinTable: "categories",
+                    on: [{
+                        source: "category_id",
+                        target: "category_id"
+                    }],
+                    joinType: "LEFT JOIN"
+                }
+            ],
+            where:{
+                fields: ["times.time_id"],
+                values: [reqData]
+            },
+            orderBy: [{
+                field: "times.month"
+            }],
+            groupBy: {
+                fields: ["expenses.category_id", "times.month"]
+            },
+            run: true,
+            isWriteField: true
+        }) as {success: boolean, data: stType[], mess: string};
+
+        if (getSum.success && getSum.data) {
+            let map = new Map<number, string[]>();
+            // // 最大月取得
+            // let maxMonth = (getSum.data.reduce((pre, cur) => (pre.month > cur.month) ? pre : cur)).month;
+            // let months = [];
+            // // カテゴリーごとの月の初期化
+            // for (let m = 0; m < maxMonth; m++) {
+            //     months.push("0");
+            // }
+            // // カテゴリーごとの月の総金額取得
+            // for (let val of getSum.data) {
+            //     // カテゴリーデータが存在しない場合、生成
+            //     if (!map.has(val.category_id)) {
+            //         map.set(val.category_id, [val.category_name, ...months]);
+            //     }
+            //     // 該当するカテゴリーの月の総金額を取得
+            //     let setMonth = map.get(val.category_id);
+            //     if (setMonth instanceof Array) {
+            //         // 該当月に総金額を格納し、Mapにセット
+            //         setMonth[val.month] = val.sum_mon.toString();
+            //         map.set(val.category_id, setMonth);
+            //     }
+            // }
+            // カテゴリーごとの月の総金額取得
+            for (let val of getSum.data) {
+                // カテゴリーデータが存在しない場合、生成
+                if (!map.has(val.category_id)) {
+                    map.set(val.category_id, [val.category_name]);
+                }
+                // 該当するカテゴリーの月の総金額を取得
+                let setMonth = map.get(val.category_id);
+                if (setMonth instanceof Array) {
+                    // 該当月に総金額を格納し、Mapにセット
+                    setMonth[1] = val.sum_mon.toString();
+                    map.set(val.category_id, setMonth);
+                }
+            }
+            statistcsDatas = Array.from(map.values());
+        } else {
+            result = false;
+            message = "支出・収入データ取得に失敗しました。"
+            console.log("category_dataは存在しない。");
+        }
+        
+    } else {
+        result = false;
+        message = "支出・収入データ取得に失敗しました。"
+        console.log("time_idは存在しない。");
+    }
+    console.log(statistcsDatas);
+    return {
+        success: result,
+        data: statistcsDatas,
+        mess: message
+    }
+}
+
+/**
+ * リクエストデータを受け取り、支出・収入データ取得処理を実行
+ * @param data time_id
+ * @returns hanldeResultType
+ */
+export function statisticsInOutView(data?: any): hanldeResultType<getInOutType>
+{
+    // 変数宣言
+    let result: boolean = true;
+    let message: string = "";
+    let reqData: string = data;
+    let inOutData: getInOutType = {sumInCome: 0, sumPay: 0}; 
+
+    // データチェック
+    if (reqData && checkNumber(reqData)) {
+        // 総収入
+        const getIncome = expensesTable.get({
+            fields: ["COALESCE(SUM(expenses.money), 0) AS sumInCome"],
+            join: [{  
+                joinTable: "categories",
+                on: [{
+                    source: "category_id",
+                    target: "category_id"
+                }],
+                joinType: "INNER JOIN"
+            }],
+            where: {
+                fields: ["categories.category_type", "expenses.time_id"],
+                values: [1, parseInt(reqData)],
+                connection: "AND"
+            },
+            isWriteField: true
+        }) as {success: boolean, data: {sumInCome: number}, mess: string};
+
+        if (getIncome.success && getIncome.data) {
+            inOutData.sumInCome = getIncome.data.sumInCome
+        } else {
+            inOutData.sumInCome = 0;
+        }
+        // 総支出
+        const getPay = expensesTable.get({
+            fields: ["COALESCE(SUM(expenses.money), 0) AS sumPay"],
+            join: [{  
+                joinTable: "categories",
+                on: [{
+                    source: "category_id",
+                    target: "category_id"
+                }],
+                joinType: "INNER JOIN"
+            }],
+            where: {
+                fields: ["expenses.time_id", "categories.category_type"],
+                values: [parseInt(reqData), 0],
+                connection: "AND"
+            },
+            isWriteField: true,
+        }) as {success: boolean, data: {sumPay: number}, mess: string};
+
+        if (getPay.success && getPay.data) {
+            inOutData.sumPay = getPay.data.sumPay
+        } else {
+            inOutData.sumPay = 0;
+        }
+    console.log(inOutData);
+    } else {
+        result = false;
+        message = "支出・収入データ取得に失敗しました。"
+        console.log("time_idは存在しない。");
+    }
+
+    return {
+        success: result,
+        data: inOutData,
+        mess: message
+    }
 }

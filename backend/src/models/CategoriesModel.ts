@@ -14,7 +14,9 @@ type categoryTableType = {
     category_id: number;
     category_name: string;
     category_type: number;
-    time_id: number;
+    display: number;
+    priority: number;
+    note: string;
 }
 
 // データ保存タイプ
@@ -22,7 +24,9 @@ type categorySaveType = {
     category_id?: number;
     category_name: string; 
     category_type: number;
-    time_id: number
+    display: number;
+    priority: number;
+    note: string;
 }
 
 // データ更新タイプ
@@ -31,19 +35,22 @@ type categoryUpdateType = {
     category_name: string;
 }
 
-// 年ごとのカテゴリーリストタイプ
+// 年ごとのカテゴリータイムタイプ
 type listCategoryGetTime = {
     month: number;
     year_name: number;
     time_id: number;
 }
 
+// 年ごとのカテゴリーデータタイプ
 type listCategoryGetCategory = {
     category_id: number;
     category_name: string;
     category_type: number;
+    time_id: number
 }
 
+// 年ごとのカテゴリーリストデータタイプ
 type listCategoryByYear = {
     month: number;
     year_name: number;
@@ -59,19 +66,15 @@ type listCategoryByYear = {
 const categoriesTable = new CategoriesTable;
 const timesTable = new TimesTable;
 
-type viewType = {
-    time_id: number;
-}
-
 /**
  * リクエストデータチェック
- * * data.time_idが存在するか
- * @param data (data.time_id)
+ * * data.show_allが存在するか
+ * @param data (data.show_all)
  * @returns 
  */
 export function checkQueryForView(data?: any): boolean
 {
-    if (data && typeof data === "object" && "time_id" in data) {
+    if (data && typeof data === "object" && "show_all" in data) {
         return true;
     } else {
         return false;
@@ -80,10 +83,13 @@ export function checkQueryForView(data?: any): boolean
 
 /**
  * リクエストデータチェック
- * * data.time_idが存在するか
+ * * 以下のデータをチェック
  * * data.category_name
  * * data.category_type
- * @param data (data.time_id)
+ * * data.display
+ * * data.priority
+ * * data.note
+ * @param data 
  * @returns 
  */
 export function checkReqDataForSave(data?: any): boolean
@@ -93,17 +99,20 @@ export function checkReqDataForSave(data?: any): boolean
         typeof data === "object" &&
         "category_name" in data &&
         "category_type" in data &&
-        "time_id" in data
+        "display" in data &&
+        "priority" in data &&
+        "note" in data
     ) {
         return true;
     } else {
         return false;
-    }   
+    }
 }
 
 /**
  * リクエストデータチェック
- * * data.category_idが存在するか
+ * * 以下のデータをチェック
+ * * data.category_id
  * @param data (data.category_id)
  * @returns 
  */
@@ -118,13 +127,47 @@ export function checkReqDataForDelete(data?: any): boolean
 
 /**
  * リクエストデータチェック
- * * data.category_idが存在するか
+ * * 以下のデータをチェック
+ * * data.category_id
+ * * data.category_name
  * @param data (data.category_id data.category_name)
  * @returns 
  */
 export function checkReqDataForUpdate(data?: any): boolean
 {
-    if (data && typeof data === "object" && "category_id" in data && "category_name" in data) {
+    if (
+        data &&
+        typeof data === "object" &&
+        "category_name" in data &&
+        "category_type" in data &&
+        "display" in data &&
+        "priority" in data &&
+        "note" in data
+    ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/**
+ * リクエストデータチェック
+ * * 以下のデータをチェック
+ * * data.category_id
+ * * data.category_name
+ * * data.category_type
+ * @param data 
+ * @returns 
+ */
+export function checkReqDataForSaveCategoryByYear(data?: any): boolean
+{
+    if (
+        data &&
+        typeof data === "object" &&
+        "category_name" in data &&
+        "category_type" in data &&
+        "category_id" in data
+    ) {
         return true;
     } else {
         return false;
@@ -134,7 +177,7 @@ export function checkReqDataForUpdate(data?: any): boolean
 /**
  * カテゴリ一覧取得
  * 
- * @param data time_id
+ * @param data show_all
  * @returns 
  */
 export function viewC(data?: any): hanldeResultType<categoryTableType[]>
@@ -143,15 +186,21 @@ export function viewC(data?: any): hanldeResultType<categoryTableType[]>
     let message: string = "";
     let result: boolean = true;
     let dataDB: categoryTableType[] = [];
+    let reqData: {show_all: string} = data;
 
     // 数字確認
-    if (checkNumber(data)) {
-        const getData = categoriesTable.getAll({
-            where: {
-                field: "time_id",
-                value: parseInt(data)
-            }
-        });
+    if (checkNumber(reqData.show_all)) {
+        let getData;
+        if (reqData.show_all === "1") {
+            getData = categoriesTable.getAll({});
+        } else {
+            getData = categoriesTable.getAll({
+                where: {
+                    fields: ["display"],
+                    values: [1],
+                }
+            });
+        }
 
         result = getData.success;
         if (result && getData.data) {
@@ -185,12 +234,18 @@ export function saveC(data?: any): hanldeResultType<any>
     let result: boolean = true;
     let message: string = "";
     let reqData: categorySaveType = data;
-    
+        console.log(reqData);
         // 数字チェック
         if (checkVietNamese(reqData.category_name)) {
             // 保存
             const saveData = categoriesTable.save({
-                values: [reqData.category_name, reqData.category_type, reqData.time_id]
+                values: [
+                    reqData.category_name,
+                    reqData.category_type,
+                    reqData.display,
+                    reqData.priority,
+                    reqData.note
+                ]
             });
             if (saveData.success) {
                 message = "Categoryデータ保存に成功しました。"
@@ -198,7 +253,7 @@ export function saveC(data?: any): hanldeResultType<any>
                 message = "Categoryデータ保存に失敗しました。"
                 result = saveData.success;
             }
-            console.log(saveData, reqData);
+
         } else {
             message = "Categoryデータは文字列で入力してください。"
             result = false;
@@ -266,13 +321,18 @@ export function updateC(data?: any): hanldeResultType<any>
     // 変数宣言
     let result: boolean = true;
     let message: string = "";
-    let reqData: categoryUpdateType = data;
+    let reqData: categoryTableType = data;
 
     // 数字と文字列確認
-    if (checkNumber(reqData.category_id) && checkVietNamese(reqData.category_name)) {
+    if (
+        checkNumber(reqData.category_id) &&
+        checkVietNamese(reqData.category_name)
+    ) {
+        let convertKey = Object.keys(reqData);
+        let convertVal = Object.values(reqData);
         // 更新
         const updateData = categoriesTable.update({
-            fieldAndValue: {fields: ["category_name"], values: [reqData.category_name]},
+            fieldAndValue: {fields: convertKey, values: convertVal},
             where: {field: "category_id", value: reqData.category_id}
         })
         if (updateData.success) {
@@ -308,9 +368,9 @@ export function getCategoryByYear(): hanldeResultType<any>
         time_id: 0,
         categoryData: []
     };
-    let listTime: listCategoryGetTime[] = [];
-    let listCategory: listCategoryGetCategory[] = [];
-    let resultData: listCategoryByYear[] = [];
+    let listTime: listCategoryGetTime[] = [];           // タイムデータ
+    let listCategory: listCategoryGetCategory[] = [];   // カテゴリデータ
+    let resultData: listCategoryByYear[] = [];          // 年ごとのデータ
 
     // timeデータ取得
     const getTime = timesTable.getAll({
@@ -331,19 +391,21 @@ export function getCategoryByYear(): hanldeResultType<any>
         // timeデータが存在する場合、カテゴリデータを取得する
         if (getTime.data) {
             listTime = getTime.data;
+            // timeデータIDごとのカテゴリーデータ取得
             listTime.map((val, index) => {
+
                 listData.time_id = val.time_id;
                 listData.month = val.month;
                 listData.year_name = val.year_name;
                 listData.categoryData = [];
-
+                // カテゴリーデータ取得
                 const getData = categoriesTable.getAll({
-                    fields: ["category_id", "category_name", "category_type"],
                     where: {
-                        field: "time_id",
-                        value: val.time_id
+                        fields: ["time_id"],
+                        values: [val.time_id]
                     }
                 });
+
                 if (getData.success && getData.data) {
                     listCategory = getData.data;
                     listData.categoryData = listCategory;

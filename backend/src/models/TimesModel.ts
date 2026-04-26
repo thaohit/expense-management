@@ -105,8 +105,8 @@ export function viewT(data?: any): hanldeResultType<timeTableType[]>
         const getData = timesTable.getAll({
             fields: ["*"],
             where: {
-                field: "year_id",
-                value: parseInt(data)
+                fields: ["times.year_id"],
+                values: [parseInt(data)]
             },
             join: [{
                 joinTable: "years",

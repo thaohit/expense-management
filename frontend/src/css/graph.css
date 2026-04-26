@@ -1,0 +1,14 @@
+
+.main {
+    display: flex;
+}
+
+.graph-header {
+    height: 30%;
+    border-bottom: 1px solid black;
+}
+
+
+.graph-body {
+    height: 70%;
+}
