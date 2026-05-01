@@ -7,7 +7,7 @@ type getTimeDateType = {
 
 type MonthListProps = {
     times?: getTimeDateType[];
-    handleClickMonth: (time_id: number, month: number) => void;
+    handleClickMonth: (year_id: number, time_id: number, month: number) => void;
     handleCheckBoxMonth: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -25,7 +25,7 @@ function MonthList({ times ,handleCheckBoxMonth, handleClickMonth}:MonthListProp
         {
             times && times.length > 0 ? times.map((value):any => (
                 <div className="month-btn-body" key={value.time_id}>
-                    <button className="dropdown-btn btn-month" onClick={() => handleClickMonth(value.time_id, value.month)}>{value.month}</button>
+                    <button className="dropdown-btn btn-month" onClick={() => handleClickMonth(value.year_id, value.time_id, value.month)}>{value.month}</button>
                     <input value={value.time_id} type="checkbox" onChange={(e) => handleCheckBoxMonth(e)}/>     
 
                 </div>

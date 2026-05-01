@@ -13,7 +13,8 @@ type getType = {
         joinType: "INNER JOIN" | "LEFT JOIN" | "RIGHT JOIN"
     }[];
     where?: {fields: string[], values: any[], connection?: "AND" | "OR"};
-    whereIn?: {field: string, values: any[]};
+    // whereIn?: {field: string, values: any[]};
+    whereIn?: {fields: string[], values: any[][], connection?: "AND" | "OR"};
     orderBy?: {field: string, direction?: "ASC" | "DESC"};
     isWriteField?: boolean;
 }
@@ -27,7 +28,7 @@ type getAllType = {
         joinType: "INNER JOIN" | "LEFT JOIN" | "RIGHT JOIN"
     }[];
     where?: {fields: string[], values: any[], connection?: "AND" | "OR"};
-    whereIn?: {field: string, values: any[]};
+    whereIn?: {fields: string[], values: any[][], connection?: "AND" | "OR"};
     orderBy?: {field: string, direction?: "ASC" | "DESC"}[];
     groupBy?: {fields: string[]};
     run?: boolean;
@@ -52,6 +53,11 @@ type hanldeResultType = {
     success: boolean;
     data?: any;
     mess: string;
+}
+
+function makePlaceholders(params: any[]): string
+{
+    return "";
 }
 
 export class AppTable {
@@ -131,9 +137,23 @@ export class AppTable {
         } 
         // WHERE IN
         else if (whereIn) {
-            const placeholders = whereIn.values.map(() => "?").join(", ");
-            params.push(...whereIn.values)
-            query += ` WHERE IN ${whereIn.field} (${placeholders})`;
+            // const placeholders = whereIn.values.map(() => "?").join(", ");
+            // params.push(...whereIn.values)
+            // query += ` WHERE IN ${whereIn.field} (${placeholders})`;
+            let whereInQuery = ` WHERE ${whereIn.fields[0]} IN (${whereIn.values[0]?.map((val) => "?").join(", ")})`
+            let whereInValues = [];
+            for (let value of whereIn.values) {
+                whereInValues.push(...value);
+            }
+            if (whereIn.connection) {
+                whereInQuery = ` WHERE ${whereIn.fields.map((val, num) => {
+                    let placeholder = whereIn.values[num]?.map((item) => "?").join(", ");
+                    let wherein = `${val} IN (${placeholder})`;
+                    return wherein;
+                }).join(` ${whereIn.connection} `)}`;
+            }
+            query += whereInQuery;
+            params = whereInValues;
         }
 
         // ORDER BY
@@ -248,11 +268,8 @@ export class AppTable {
             // else if (fieldsJoin || fields) {
             //     query = `SELECT ${fields?.map((val) => `${this.tableName}.${val}`).join(", ") || ""}${fieldsJoin?.map((val) => `${join.joinTable}.${val}`) || ""} FROM ${this.tableName}`;
             // }
-        } else {
         }
-        // console.log(query);
-        // console.log(query2);
-        // console.log(query3);
+        
         let params: any[] = [];
 
         // WHERE
@@ -283,7 +300,33 @@ export class AppTable {
         }
         // WHERE IN
         else if (whereIn) {
-            query += ` WHERE ${whereIn.field} IN (${whereIn.values.map((val) => val).join(", ")})`
+
+            if (whereIn.connection && whereIn.fields.length <= 1) {
+                return {
+                    success: false,
+                    mess: "Cannot use connection if whereIn's field is less then 1"
+                }
+            } else if (!whereIn.connection && whereIn.fields.length > 1) {
+                return {
+                    success: false,
+                    mess: "Cannot use connection if while field is less then 1"
+                }
+            }
+
+            let whereInQuery = ` WHERE ${whereIn.fields[0]} IN (${whereIn.values[0]?.map((val) => "?").join(", ")})`
+            let whereInValues = [];
+            for (let value of whereIn.values) {
+                whereInValues.push(...value);
+            }
+            if (whereIn.connection) {
+                whereInQuery = ` WHERE ${whereIn.fields.map((val, num) => {
+                    let placeholder = whereIn.values[num]?.map((item) => "?").join(", ");
+                    let wherein = `${val} IN (${placeholder})`;
+                    return wherein;
+                }).join(` ${whereIn.connection} `)}`;
+            }
+            query += whereInQuery;
+            params = whereInValues;
         }
         // ORDER BY
         // GROUP BY
@@ -457,7 +500,9 @@ export class AppTable {
             }
         }
     }
+
 }
+
 
 
 

@@ -1,11 +1,10 @@
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 
 import '../css/categoryaddarea.css'
 
 // component
 import CategoryTable from './CategoryTable';
-import InputAndP from './InputAndP';
 
 // api
 import {
@@ -34,7 +33,7 @@ type selectCategoryFromTableType = {
 
 type categoryAddAreaProps = {
     time: timeType;
-    isClickMonth: boolean;
+    isClickDropdown: boolean;
 }
 
 // 年ごとのカテゴリーリストタイプ
@@ -51,10 +50,10 @@ type categoryListByYear = {
 /**
  * 
  * @param time timesデータ
- * @param isClickMonth  タイムの選択状態 
+ * @param isClickDropdown  タイムの選択状態 
  * @returns 
  */
-function CategoryAddArea({ time, isClickMonth }: categoryAddAreaProps): React.ReactNode
+function CategoryAddArea({ time, isClickDropdown }: categoryAddAreaProps): React.ReactNode
 {   
     const [input, setInput] = useState<string>("");                                      // 入力
     const [countInput, setCountInput] = useState<number>(0);                            // 入力計算
@@ -368,7 +367,7 @@ function CategoryAddArea({ time, isClickMonth }: categoryAddAreaProps): React.Re
 
             return () => {ignore = true;}
     
-    }, [isSave, isClickMonth]);
+    }, [isSave, isClickDropdown]);
 
     useEffect(() => {
         

@@ -19,7 +19,12 @@ import Graph from '../components/Graph';
 import Statistics from '../components/Statistics';
 
 // api
-import { handleGetAllYear, handleSaveYear, handleDeleteYear } from '../services/api';
+import {
+    handleGetAllYear,
+    handleSaveYear,
+    handleDeleteYear,
+    handleGetStatisticsForYear
+} from '../services/api';
 
 // ================ TYPE ================
 type yearDbType = {
@@ -27,16 +32,26 @@ type yearDbType = {
     year_name: number;
 }
 
-type timeType = {
+type timeDataType = {
+    year_id: number;
     time_id: number;
     year: number;
     month: number;
 }
 
 type mainComponentType = {
-    time: timeType;
+    time: timeDataType;
     isCategoryUpdata: boolean;
-    isClickMonth: boolean;
+    isClickDropdown: boolean;
+}
+
+// 一年の支出・収入一覧タイプ
+type statisticsDataForYearType = {
+    inComeList: string[][];
+    spendList: string[][];
+    sumIncome: string;
+    sumSpend: string;
+    remainAmount: string;
 }
 
 /** function Home
@@ -46,41 +61,49 @@ type mainComponentType = {
 function Home() {
     
     const navigate = useNavigate();
-    const [homeRenderCount, setHomeRenderCount] = useState<number>(0);          // ホームページのrender回数
     const [yearDB, setYearDB] = useState<yearDbType[]>([]);           
     const [yearCheckBox, setYearCheckBox] = useState<number[]>([]);             // 選択した年のidのリスト
     
     const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
     const [isCategoryAdd, setIsCategoryAdd] = useState<boolean>(false);         // category追加画面を表示するか true or false
     const [updateDataState, setUpdateDataState] = useState<boolean>(true);      // DBとの処理が実行された場合、re-render
-    const [isClickMonth, setIsClickMonth] = useState<boolean>(false);           // タイムの選択状態
+    const [isClickDropdown, setIsClickDropdown] = useState<boolean>(false);           // タイムの選択状態
     const [isComponent, setIsComponent] = useState<string>("home");
+    const [isShowAllSta, setIsShowAllSta] = useState<boolean>(false);           // 一年ごとの統計表示
 
-    const [timeForComponent, setTimeForComponent] = useState<timeType>({
+    const [timeForComponent, setTimeForComponent] = useState<timeDataType>({
+        year_id: 0,
         time_id: 0,
         year: 0,
         month: 0
-    })                                                                          // componentのtimeを設定
+    });                                                                         // componentのtimeを設定
 
+    const [statisticsData, setStatisticsData] = useState<statisticsDataForYearType>({
+        inComeList: [],
+        spendList: [],
+        sumIncome: "0",
+        sumSpend: "0",
+        remainAmount: "0"
+    });
     
     /**
      * main component 切り替える
      * @param param0 
      * @returns 
      */
-    const MainComponent = ({ time, isCategoryUpdata, isClickMonth}: mainComponentType) => {
+    const MainComponent = ({ time, isCategoryUpdata, isClickDropdown}: mainComponentType) => {
 
         switch (isComponent) {
             case "home":
                 return <HomeMain
                             isCategoryUpdata={isCategoryUpdata}
                             time={time}
-                            isClickMonth={isClickMonth}
+                            isClickDropdown={isClickDropdown}
                         /> 
             case "category":
                 return <CategoryAddArea
                             time={time}
-                            isClickMonth={isClickMonth}
+                            isClickDropdown={isClickDropdown}
                         />
             case "graph":
                 return <Graph
@@ -89,13 +112,14 @@ function Home() {
             case "statistics":
                 return <Statistics
                     time={time}
+                    datas={statisticsData}
                 />
         }
         return 
     }
 
     // =========== hanle eara =====================
-
+    // mainComponent 切り替え処理
     const handleChangeMainComponent = (type: string) => {
 
         let getType: string = type;
@@ -105,6 +129,12 @@ function Home() {
             getType = "home";
         }
         setIsComponent(getType);
+        // 統計一覧画面をクリックする場合
+        // データを取得するために、isclickdown更新
+        if (type === "statistics") {
+            setIsShowAllSta(!isShowAllSta);
+            setIsClickDropdown(!isClickDropdown);
+        }
     }
 
     const changePage = ():void => {
@@ -191,14 +221,20 @@ function Home() {
      * @param year 
      * @param month 
      */
-    const handleSelectTimeForMainAera = (time_id: number, year: number = 0, month: number = 0) => {
+    const handleSelectTimeForMainArea = (
+        year_id: number,
+        time_id: number,
+        year: number = 0,
+        month: number = 0
+    ) => {
         // Componentのタイムデータをセットする
         setTimeForComponent({
+            year_id: year_id,
             time_id: time_id,
             year: year,
             month: month
         });
-        setIsClickMonth(!isClickMonth);
+        setIsClickDropdown(!isClickDropdown);
     };
 
     // Lỗi khi dùng useEffect
@@ -225,10 +261,21 @@ function Home() {
                 }
             }
         });
-        setHomeRenderCount(homeRenderCount + 1);
         return () => {ignore = true;} 
         
     }, [updateDataState]);
+
+    // isClickDropdown変更された場合、支出・収入一覧データ取得
+    useEffect(() => {
+        if (isComponent === "statistics") {
+            const getStatisticsForYear = handleGetStatisticsForYear(timeForComponent.year_id);
+            getStatisticsForYear.then((res) => {
+                if (res.success && res.data) {
+                    setStatisticsData(res.data);
+                }
+            })
+        }
+    }, [isClickDropdown])
 
     return <>
             <div id="home-page">
@@ -247,7 +294,7 @@ function Home() {
                             </BtnIcon>
                         </div>
                     </div>
-                    
+
                     <div id="sidebar-main">
                         <div className="year-area-bar">
                             <BtnIcon 
@@ -264,21 +311,21 @@ function Home() {
                             {yearDB.map((value) => (
                                 <div className="year-btn" key={value.year_id}>
                                     <Dropdown
-                                        homeReCount={homeRenderCount}
                                         year={value.year_name}
                                         id={value.year_id}
-                                        selectedCheckBox={yearCheckBox}
+                                        isComponent={isComponent}
                                         handleCheckBox={handleCheckBox}
-                                        handleSelectTimeForMainAera={handleSelectTimeForMainAera}
+                                        handleSelectTimeForMainArea={handleSelectTimeForMainArea}
                                         handleSetIsUpdate={() => setUpdateDataState(!updateDataState)}
-                                        handleSetIsClickMonth={() => {
+                                        handleSetIsClickDropdown={() => {
                                             setTimeForComponent({
+                                                year_id: 0,
                                                 year: 0,
                                                 time_id: 0,
                                                 month: 0
                                             });
 
-                                            setIsClickMonth(!isClickMonth);
+                                            setIsClickDropdown(!isClickDropdown);
                                         }}
                                     />
                                 </div>
@@ -293,7 +340,7 @@ function Home() {
                     <MainComponent 
                         isCategoryUpdata={isCategoryAdd}
                         time={timeForComponent}
-                        isClickMonth={isClickMonth}
+                        isClickDropdown={isClickDropdown}
                     />
                 </div>
             </div>

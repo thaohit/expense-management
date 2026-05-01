@@ -42,7 +42,7 @@ type ExpenseTableProps = {
     body: ExpenseTableBody[];
     time: timeType;
     isUpdate: boolean;
-    isClickMonth: boolean;
+    isClickDropdown: boolean;
     isCategoryUpdate?: boolean;
     handleDelete: (ids: number[]) => void;
     handleUpdate: (data: any) => void;
@@ -56,7 +56,7 @@ type categoryDataType = {
  * 支出・収入一覧表示
  * @param body  
  * @param time
- * @param isClickMonth
+ * @param isClickDropdown
  * @param isUpdate
  * @param isCategoryUpdate
  * @function handleDelete
@@ -66,7 +66,7 @@ type categoryDataType = {
 function ExpenseTable({
     body,
     time,
-    isClickMonth,
+    isClickDropdown,
     isUpdate,
     isCategoryUpdate,
     handleDelete,
@@ -212,7 +212,7 @@ function ExpenseTable({
     useEffect(() => {
         setCheckBox([]);
         handleInitial();
-    }, [isUpdate, isClickMonth]);
+    }, [isUpdate, isClickDropdown]);
 
     // データ保存される場合かつ別の月が選択される場合、カテゴリーデータ一覧を再取得する
     useEffect(() => {
@@ -228,7 +228,7 @@ function ExpenseTable({
 
         // 初期化
         handleInitial();
-    }, [isClickMonth, isCategoryUpdate]);
+    }, [isClickDropdown, isCategoryUpdate]);
 
 
     return <>

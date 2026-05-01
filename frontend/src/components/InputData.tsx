@@ -44,7 +44,7 @@ type saveDataType = {
 type inputDataProps = {
     sideBarIsOpen: boolean;             // sideBar開閉状態
     isCategoryUpdate?: boolean;         // category table更新状態
-    isClickMonth: boolean;              // time選択状態
+    isClickDropdown: boolean;              // time選択状態
     time: timeType;                     // timeテーブルデータ
     getIsUpdateData: () => void;        // expenseデータ更新状態を取得
 }
@@ -53,7 +53,7 @@ type inputDataProps = {
  * 
  * @param sideBarIsOpen sideBar開閉状態
  * @param isCategoryUpdate category table更新状態
- * @param isClickMonth time選択状態
+ * @param isClickDropdown time選択状態
  * @param time id year month
  * @function getIsUpdateData expenseデータ更新状態を取得
  * @returns 
@@ -61,7 +61,7 @@ type inputDataProps = {
 function InputData({
     sideBarIsOpen = true,
     isCategoryUpdate,
-    isClickMonth,
+    isClickDropdown,
     time,
     getIsUpdateData
 }: inputDataProps) 
@@ -259,7 +259,7 @@ function InputData({
         });
         // 初期化
         handleInitial();
-    }, [isClickMonth, isCategoryUpdate])
+    }, [isClickDropdown, isCategoryUpdate])
     
     // console.log("input data");
     return <>

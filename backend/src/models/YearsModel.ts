@@ -172,7 +172,7 @@ export function deleteY(data?: any): hanldeResultType<any>
             const getTimeData = timesTable.getAll({
                 fields: ["time_id"],
                 whereIn: {
-                    field: "year_id",
+                    fields: ["year_id"],
                     values: [data]
                 }
             }) as hanldeResultType<{time_id: number}[]>;
@@ -187,8 +187,8 @@ export function deleteY(data?: any): hanldeResultType<any>
                     const getExpenseData = expensesTable.getAll({
                         fields: ["expense_id"],
                         whereIn: {
-                            field: "time_id",
-                            values: convertTimeData
+                            fields: ["time_id"],
+                            values: [convertTimeData]
                         }
                     }) as hanldeResultType<{expense_id: number}[]>;
                     // 存在する場合、削除する
@@ -210,8 +210,8 @@ export function deleteY(data?: any): hanldeResultType<any>
                     // category data確認
                     const getCategoryData = categoriesTable.getAll({
                         whereIn: {
-                            field: "time_id",
-                            values: convertTimeData
+                            fields: ["time_id"],
+                            values: [convertTimeData]
                         }
                     }) as hanldeResultType<{category_id: number}[]>;
                     // 存在する場合、削除する

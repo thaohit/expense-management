@@ -13,21 +13,15 @@ import "../css/dropdown.css";
 import { handleDeleteTime, handleGetAllTime, handleSaveTime, handleSaveYear } from "../services/api";
 
 type DropDownProps = {
-    homeReCount: number;            // ホームページのrender回数
     year: number;                   // 年
     id?: number;                    // year_id
-    selectedCheckBox?: number[];     // 選択されているチェックボックス
-    handleSelectTimeForMainAera: (time_id: number, year: number, month: number) => void;  // 月をクリックする処理
+    isComponent: string;    // 年ごとの金額統計一覧表示状態
+    handleSelectTimeForMainArea: (year_id:number, time_id: number, year: number, month: number) => void;  // 月をクリックする処理
     handleCheckBox: (e: React.ChangeEvent<HTMLInputElement>) => void;   // 月を選択する処理
     handleSetIsUpdate: () => void;  // timeデータ削除後の状態を更新
-    handleSetIsClickMonth: () => void; // timeデータ削除後の状態を初期化
+    handleSetIsClickDropdown: () => void; // timeデータ削除後の状態を初期化
+    handleSetYear?: (year: number) => void;  // yearデータを設定
     children?: React.ReactNode;
-}
-
-type timeDbType = {
-    time_id: number;
-    year: number;
-    month: number;
 }
 
 type getTimeDateType = {
@@ -49,14 +43,14 @@ type selectMonthOfEachYearType = {
  * @returns 
  */
 function Dropdown({
-    homeReCount,
     year = 0,
     id = 0,
-    selectedCheckBox,
+    isComponent,
     handleCheckBox,
-    handleSelectTimeForMainAera,
+    handleSelectTimeForMainArea,
     handleSetIsUpdate,
-    handleSetIsClickMonth
+    handleSetIsClickDropdown,
+    handleSetYear
 }:DropDownProps)
 {
     const [timeData, setTimeData] = useState<getTimeDateType[]>([]);
@@ -67,6 +61,7 @@ function Dropdown({
     const [monthCheckBox, setMonthCheckBox] = useState<selectMonthOfEachYearType[]>([]);
     const [yearCheckBox, setYearCheckBox] = useState<number[]>([]);                 // ＊selectedCheckBoxとどっち使えるか次回確認
 
+    const [isStatistics, setIsStatistics] = useState<boolean>(false);               // statistics component表示状態
     /**
      * 保存ボタンの処理
      * @param data 
@@ -105,13 +100,12 @@ function Dropdown({
         if (!confirm("月を削除する場合には支出・収入データとカテゴリデータも削除されます! \nよろしいですか?")) {
             return;
         } 
-
         const resDelTime = handleDeleteTime(data);
         resDelTime.then((res) => {
             if(res.success) {
                 setUpdateDataState(!updateDataState);
                 handleSetIsUpdate();
-                handleSetIsClickMonth();
+                handleSetIsClickDropdown();
             }
             alert(res.mess);
         })
@@ -205,15 +199,32 @@ function Dropdown({
      * @param time_id 
      * @param month 
      */
-    const handleGetClickMonth = (time_id: number, month: number) => {
-        handleSelectTimeForMainAera(time_id ,year, month);
+    const handleGetClickMonth = (year_id: number, time_id: number, month: number) => {
+        handleSelectTimeForMainArea(year_id, time_id ,year, month);
+    }
+
+    /**
+     * 年を選択する処理
+     * * statistics表示時に、年選択を有効にする
+     * * statistics非表示に、年選択を無効にし、月選択を有効にする
+     * * 
+     * @returns void
+     */
+    const handleSelectYear = () => {
+        if (isComponent === "statistics") {
+            if (id) {
+                handleSelectTimeForMainArea(
+                    id, 0, year, 0
+                );
+            }
+            return;
+        }
+        setIsOpen(!isOpen);
     }
 
 
     useEffect(() => {
-
         let ignore = false; // Clear up
-        
         if (ignore === false) {
             const getTime = handleGetAllTime(id);
             getTime.then((res) => {
@@ -225,16 +236,22 @@ function Dropdown({
                 }
                 setTimeData(timeData);
             });
-            
         }
         return () => {ignore = true;} 
 
-    }, [updateDataState])
+    }, [updateDataState, isComponent])
+
+    useEffect(() => {
+        // 金額統計一覧が表示される場合、ドロップダウン非表示
+        setIsStatistics((pre) => {
+            return isComponent === "statistics" ? true : false;
+        })
+    }, [isComponent])
 
     return <>
         <div className="dropdown">
             <div className="dropdown-up" >
-                <button className="dropdown-btn" onClick={ () => setIsOpen(!isOpen)}>
+                <button className="dropdown-btn" onClick={ () => handleSelectYear()}>
                     <span>{year}</span>
                 </button>
                 <input
@@ -244,11 +261,11 @@ function Dropdown({
                     className="dropdown-up-check-box"
                     onChange={(e) => handleCheckBoxYear(e)}
                 />
-                <span className={ isOpen ? "icon rotate" : "icon"}>
+                <span className={ isOpen && isStatistics === false? "icon rotate" : "icon"}>
                     <ArrowDropDownIcon />
                 </span>
             </div>
-            <div className={ isOpen ? "dropdown-down menu-open": "dropdown-down"}>
+            <div className={ isOpen && isStatistics === false? "dropdown-down menu-open": "dropdown-down"}>
                 {/* 入力項目とボタン */}
                 <BtnIcon 
                     title="Month"

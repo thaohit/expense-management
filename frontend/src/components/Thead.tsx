@@ -1,4 +1,6 @@
-
+/**
+ * Thead Component
+ */
 
 interface TheadType {
     thData?: any[];

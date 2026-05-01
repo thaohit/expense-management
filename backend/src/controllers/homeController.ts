@@ -578,17 +578,26 @@ export function updateExpensev2(req: Request, res: Response): void
 export function getStatisticsViewv1(req: Request, res: Response): void
 {
     const reqQuery = req.query;
-
     // クエリ確認
-    if (expensesModel.checkReqDataForView(reqQuery)) {
-        
-        const getData = expensesModel.statisticsView(reqQuery.time_id);
-        if (getData.success) {
-            console.log("GET STATISTICS OK");
-        } else{
-            console.log("GET STATISTICS NG");
+    if (expensesModel.checkReqDataForGetStatistics(reqQuery)) {
+        if ("year_id" in reqQuery) {
+            const getData = expensesModel.statisticsViewForYear(reqQuery);
+            if (getData.success) {
+                console.log("GET STATISTICS OK");
+            } else{
+                console.log("GET STATISTICS NG");
+            }
+            res.json(getData);
+        } else if ("time_id" in reqQuery) {
+            const getData = expensesModel.statisticsViewForMonth(reqQuery);
+            if (getData.success) {
+                console.log("GET STATISTICS OK");
+            } else{
+                console.log("GET STATISTICS NG");
+            }
+            res.json(getData);
         }
-        res.json(getData);
+
     } else {
         console.log("GET STATISTICS NG");
         res.json({
@@ -610,14 +619,12 @@ export function getStatisticsInOutViewv1(req: Request, res: Response): void
 
     // クエリ確認
     if (expensesModel.checkReqDataForView(reqQuery)) {
-        
         const getData = expensesModel.statisticsInOutView(reqQuery.time_id);
         if (getData.success) {
             console.log("GET STATISTICS IN OUT OK");
         } else{
             console.log("GET STATISTICS IN OUT NG");
         }
-        console.log(getData);
         res.json(getData);
     } else {
         console.log("GET STATISTICS IN OUT NG");

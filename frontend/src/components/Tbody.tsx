@@ -2,6 +2,7 @@
 
 interface TbodyType {
     tdData?: string[][];
+    currency?: string;
 }
 
 /**
@@ -9,7 +10,7 @@ interface TbodyType {
   * @param tdData
   * @returns 
   */
-function Tbody({ tdData }: TbodyType)
+function Tbody({ tdData, currency = ""}: TbodyType)
 {
 
     return <>

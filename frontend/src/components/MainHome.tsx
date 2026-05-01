@@ -9,7 +9,14 @@ import StatisticsTable from './StatisticsTable';
 
 
 // api
-import { handleGetAllCategory, handleGetAllExpense, handleDeleteExpense, handleUpdateExpense, handleGetStatistics, handleGetStatisticsInOut } from '../services/api';
+import {
+    handleGetAllCategory,
+    handleGetAllExpense,
+    handleDeleteExpense,
+    handleUpdateExpense,
+    handleGetStatisticsForMonth,
+    handleGetStatisticsInOut
+} from '../services/api';
 
 
 
@@ -24,7 +31,7 @@ type MainHomeProps = {
     props?: boolean;
     isCategoryUpdata?: boolean;         // category_tableのデータ更新状態
     time: timeType;                     // id, year, month
-    isClickMonth: boolean;              // タイムの選択状態
+    isClickDropdown: boolean;              // タイムの選択状態
     children?: React.ReactNode;
 }
 
@@ -47,14 +54,15 @@ type sumInOutType = {
  * 
  * @param isCategoryUpdata  category_tableのデータ更新状態 
  * @param time id, year, month
- * @function isClickMonth      タイムの選択状態
+ * @function isClickDropdown      タイムの選択状態
  * @returns 
  */
-function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): React.ReactNode
+function HomeMain({ isCategoryUpdata, time, isClickDropdown }: MainHomeProps): React.ReactNode
 {
     const [isOpen, setIsOpen] = useState<boolean>(true);                        // サイドバーの状態　true | false
     const [isUpdateData, setIsUpdateData] = useState<boolean>(true);            // DBのデータ更新状態
     const [isShowStatistics, setIsShowStatistics] = useState<boolean>(false);   // statistic表示
+    const [isMinus, setIsMinus] = useState<boolean>(false);
 
     const [expenseData, setExpenseData] = useState<expenseDataType[]>([]);      // expense data
     const [checkBox, setCheckBox] = useState<string[]>([]);                     // Table componentからチェックバックスで選択された値
@@ -62,6 +70,7 @@ function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): Reac
     const [theadForStatistics, setTheadForStatistics] = useState<string[]>(["Category"]);
     const [statisticsData, setStatisticsData] = useState<string[][]>([]);   // 支出・収入データ一覧
     const [sumInOut, setSumInOut] = useState<sumInOutType>({sumInCome: 0, sumPay: 0});
+    const [remainAmount , setRemainAmount] = useState<number>(0);
 
     // inputdata側で入力成功の場合、expense table更新
     const handleGetIsUpdateState = () => {
@@ -112,14 +121,8 @@ function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): Reac
         return () => {ignore = true};
     }, [isCategoryUpdata]);
 
-    // タイムが更新される場合
-    useEffect(() => {
-        
-    }, [isClickMonth]);
-
     // Expenseデータ一覧を取得し、反映する
     useEffect(() => {
-
         const getAllExpense = handleGetAllExpense(time.time_id);
         getAllExpense.then((res) => {
             if (res.success && res.data) {
@@ -129,32 +132,38 @@ function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): Reac
             }
             console.log(res.mess);
         });
-
         // 初期化
         setCheckBox([]);
-    }, [isClickMonth, isUpdateData]);
+    }, [isClickDropdown, isUpdateData]);
 
-    useEffect(() => {   
-            // 支出・収入一覧取得
-            // 月のリストを初期化 (1~maxMonth)
-            const getData = handleGetStatistics(time.time_id);
-            getData.then((res) => {
-                if (res.success && res.data) {
-                    setStatisticsData(res.data)
+
+    // 支出・収入一取得
+    useEffect(() => {
+        // 支出・収入一覧取得
+        // 月のリストを初期化
+        const getData = handleGetStatisticsForMonth(time.time_id);
+        getData.then((res) => {
+            if (res.success && res.data) {
+                setStatisticsData(res.data)
+            } else {
+
+            }
+        })
+        // 収入
+        const getInOut = handleGetStatisticsInOut(time.time_id);
+        getInOut.then((res) => {
+            if(res.success && res.data) {
+                setSumInOut(res.data);
+                let amount = res.data.sumInCome - res.data.sumPay;
+                if (amount < 0) {
+                    setIsMinus(true);
                 } else {
-    
+                    setIsMinus(false);
                 }
-            })
-
-            const getInOut = handleGetStatisticsInOut(time.time_id);
-            getInOut.then((res) => {
-                if(res.success && res.data) {
-                    setSumInOut(res.data);
-                    console.log(res.data);
-                }
-            })
-    
-        }, [isShowStatistics, isUpdateData]);
+                setRemainAmount(amount);
+            }
+        })
+    }, [isClickDropdown, isCategoryUpdata, isUpdateData]);
 
     return <>
         
@@ -167,7 +176,7 @@ function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): Reac
                 <InputData 
                     sideBarIsOpen={isOpen}
                     isCategoryUpdate={isCategoryUpdata}
-                    isClickMonth={isClickMonth}
+                    isClickDropdown={isClickDropdown}
                     time={time}
                     getIsUpdateData={handleGetIsUpdateState}
                 />
@@ -183,17 +192,21 @@ function HomeMain({ isCategoryUpdata, time, isClickMonth }: MainHomeProps): Reac
                             body={expenseData}
                             time={time}
                             isUpdate={isUpdateData}
-                            isClickMonth={isClickMonth}
+                            isClickDropdown={isClickDropdown}
                             isCategoryUpdate={isCategoryUpdata}
                             handleDelete={handleDelete}
                             handleUpdate={handleUpdate}
                         />
                     </div>
-                    <div className={`${isShowStatistics ? "main-body-statics-table" : "main-body-statics-table display-not-show"}`}>
+                    <div className={`${isShowStatistics ? "main-body-statis-table" : "main-body-statis-table display-not-show"}`}>
+                        <div className="show-detail">
+                            <p>Total income: {sumInOut.sumInCome}¥</p>
+                            <p>Total spending: {sumInOut.sumPay}¥</p>
+                            <p>Remaining amount: {remainAmount}¥</p>
+                        </div>
                         <StatisticsTable
                             tHead={["Category", time.month.toString()]}
                             tBody={statisticsData}
-                            sumInOut={sumInOut}
                         />
                     </div>
                 </div>

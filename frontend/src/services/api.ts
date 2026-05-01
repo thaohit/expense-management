@@ -84,6 +84,16 @@ type getInOutStatistics = {
     sumInCome: number;
     sumPay: number;
 }
+
+// 一年の支出・収入一覧タイプ
+type statisticsDataForYearType = {
+    inComeList: string[][];
+    spendList: string[][];
+    sumIncome: string;
+    sumSpend: string;
+    remainAmount: string;
+}
+
 /** 
  * データをバックエンドへPOSTし、確認
  * @param params ユーザーIDとPWを含めるオブジェクト { userName, pw}
@@ -729,11 +739,47 @@ export async function handleDeleteExpense(expense_ids: number[]): Promise<apiRes
  * @param time_id 
  * @returns 
  */
-export async function handleGetStatistics(time_id: number): Promise<apiResultType<string[][]>>
+export async function handleGetStatisticsForMonth(time_id: number): Promise<apiResultType<string[][]>>
 {
 
     try {
         const apiRes = await fetch(`http://localhost:3000/home/api/v1/statistics?time_id=${time_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        if (!apiRes.ok) {
+            throw new Error(`HTTP error ${apiRes.status}`);
+        }
+
+        return apiRes.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            return {
+                success: false,
+                mess: error.message
+            }
+        }
+
+        return {
+            success: false,
+            mess: "Unknow Error"
+        }
+    }
+}
+
+/**
+ * 一年の支出・収入一覧取得
+ * @param year_id 
+ * @returns 
+ */
+export async function handleGetStatisticsForYear(year_id: number): Promise<apiResultType<statisticsDataForYearType>>
+{
+
+    try {
+        const apiRes = await fetch(`http://localhost:3000/home/api/v1/statistics?year_id=${year_id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
